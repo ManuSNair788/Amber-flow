@@ -26,3 +26,19 @@ export async function login(formData: FormData) {
 
   return { error: null }
 }
+
+export async function verify(email: string, token: string) {
+  const supabase = await createClient()
+  
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  })
+  
+  if (error) {
+    return { error: error.message }
+  }
+  
+  return { error: null }
+}
