@@ -1,0 +1,100 @@
+# Project Context
+
+This document outlines the core requirements, architecture, and design constraints for the Partnership Operations AI Assistant (POAI). It serves as the primary reference context for the project.
+
+---
+
+# Partnership Operations AI Assistant (POAI)
+## MVP Product Requirements Document for Antigravity
+
+### Purpose
+Build a production-ready internal SaaS web application that centralizes partnership operations. The MVP must support Slack lead ingestion (initially mocked if Slack is unavailable), AI extraction of lead details, lead management, approval queue, activity logs, and a modern dashboard.
+
+### Tech Stack
+* **Frontend**: Next.js 15 (App Router), React, TypeScript, Tailwind CSS, shadcn/ui.
+* **Backend**: Supabase (PostgreSQL + Auth).
+* **AI**: Groq API (for LLM) and BGE Model (for Embeddings).
+* **Hosting**: Vercel.
+* **Architecture**: Component-based, responsive, reusable.
+
+### Design & Aesthetics (Antigravity Standards)
+* **Premium UI/UX**: The application must have a rich, dynamic design (vibrant colors, modern typography like Inter/Outfit, glassmorphism, smooth gradients). 
+* **Animations**: Incorporate micro-animations and hover effects to make the application feel responsive and alive.
+* **No Placeholders**: Use `generate_image` or actual functional components rather than relying on static placeholders.
+* **Fidelity**: Strictly match the premium, modern SaaS UI showcased in the provided prototype image.
+
+### Pages to Build
+1. **Login**
+2. **Dashboard**
+3. **Lead Management**
+4. **Student Details (360 View)**
+5. **Approval Queue**
+6. **Activity Log**
+7. **AI Copilot** (chat placeholder, cleanly integrated)
+8. **Settings**
+
+### Dashboard Requirements
+**Top KPI cards:**
+* New Leads Today
+* Pending Approvals
+* DNP Today
+* Bookings Today
+* Active Partners
+* AI Tasks Automated
+
+**Below KPIs:**
+* AI Insights panel
+* Recent Activity timeline
+* Quick Actions
+* Slack Preview panel
+* AI Extracted Details panel
+* AI Generated Follow-up panel
+
+### Lead Management
+* Searchable table with filters (Partner, Status, Date, Country).
+* Columns: Student, Prospect ID, Partner, Status, Last Updated, Actions.
+* Actions: View, Edit.
+
+### Student 360 Page
+* Tabs: Overview, Timeline, Notes, Activity.
+* Display Partner, Prospect ID, Status, and a chronological timeline.
+
+### Approval Queue
+* Table columns: Student, Partner, Generated Message, Status.
+* Buttons: Approve, Edit, Reject.
+* Approved messages become "Ready for Delivery".
+
+### Activity Log
+* Every action is logged with Timestamp, User, Student, Action, Status.
+
+### AI Features
+* **Mock Slack Parser**:
+  * Input: Raw Slack message.
+  * Output: Student Name, Prospect ID, Partner, Status, Notes.
+* **Message Generation**: Generate a professional follow-up draft from extracted data.
+
+### Database Schema
+**Tables:**
+* `users` (id, name, email, role)
+* `partners` (id, name)
+* `students` (id, prospect_id, name, partner_id, status, notes)
+* `activities` (id, student_id, action, user_id, timestamp)
+* `approvals` (id, student_id, message, status, approved_by)
+
+### Acceptance Criteria
+* Responsive layout across all devices.
+* Authentication works seamlessly via Supabase.
+* Dashboard populated securely from the database.
+* Full CRUD capabilities for students.
+* Approval workflow is fully functional.
+* Activity log updates automatically upon actions.
+* UI meets the high-quality modern SaaS bar matching the provided prototype.
+
+### Antigravity Instructions
+* Read this PRD before generating any code.
+* Build module-by-module to ensure stability.
+* Generate a scalable folder structure suited for Next.js 15 App Router.
+* Use reusable, strictly-typed components.
+* Seed mock data to allow immediate visual testing.
+* Do not implement WhatsApp or CRM integrations in the MVP.
+* Prepare Slack integration behind an abstraction/interface so the real API can be swapped in later without major refactoring.
