@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Users, FileText, CheckCircle, Clock, ArrowUpRight } from 'lucide-react';
+import { SimulateWebhook } from '@/components/simulate-webhook';
 
 export default async function DashboardPage() {
   // Fetch real data from the seeded DB
@@ -76,9 +77,7 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors border border-transparent hover:border-slate-200">
-                + Manually Add Lead
-              </button>
+              <SimulateWebhook />
               <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors border border-transparent hover:border-slate-200">
                 Generate Partner Report
               </button>
