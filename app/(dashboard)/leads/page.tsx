@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Search, Filter, MoreHorizontal, UserCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function LeadsPage() {
   // Fetch students joined with partners
@@ -54,12 +55,12 @@ export default async function LeadsPage() {
               {leads?.map((lead: any) => (
                 <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                    <Link href={`/leads/${lead.id}`} className="flex items-center gap-3 group">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                         {lead.name.charAt(0)}
                       </div>
-                      <span className="font-semibold text-slate-900 text-sm">{lead.name}</span>
-                    </div>
+                      <span className="font-semibold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">{lead.name}</span>
+                    </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 font-mono">
                     {lead.prospect_id}
