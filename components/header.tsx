@@ -1,11 +1,27 @@
+'use client'
+
 import { Calendar, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export function Header() {
+  const [dateStr, setDateStr] = useState('');
+  const [greeting, setGreeting] = useState('Good morning');
+
+  useEffect(() => {
+    const now = new Date();
+    setDateStr(now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
+    
+    const hour = now.getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 18) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+  }, []);
+
   return (
     <header className="h-24 px-8 flex items-center justify-between">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          Good morning, Manu <span className="text-2xl wave">👋</span>
+          {greeting}, Manu <span className="text-2xl wave">👋</span>
         </h2>
         <p className="text-slate-500 mt-1 text-sm font-medium">Here's what's happening with your partnerships today.</p>
       </div>
@@ -13,7 +29,7 @@ export function Header() {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 bg-white border border-slate-200 shadow-sm rounded-lg px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-50 transition-colors">
           <Calendar className="w-4 h-4 text-slate-500" />
-          <span>20 May 2025</span>
+          <span suppressHydrationWarning>{dateStr || 'Loading...'}</span>
         </div>
         
         <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
