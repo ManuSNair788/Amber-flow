@@ -9,7 +9,7 @@ export async function login(formData: FormData) {
     return { error: 'Invalid email domain. Must be @amberstudent.com' }
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://amber-flow-virid.vercel.app';
 
