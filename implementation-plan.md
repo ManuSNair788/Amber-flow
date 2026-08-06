@@ -58,9 +58,9 @@ This document outlines the step-by-step, phased execution plan to build the Part
 * **8.3 Middleware Enforcement:** Secure all dashboard routes with a Next.js middleware that forces unauthenticated users to the `/login` page.
 * **8.4 Session Management:** Ensure session cookies are securely verified via `@supabase/ssr` on the server before granting access to protected routes.
 
-## Phase 9: High-Fidelity UI Implementation (Core 4 Views)
-**Goal:** Focus entirely on the 4 critical workflows required for the MVP.
-* **9.1 Dashboard View:** A focused analytics dashboard showing how many Leads the user has been tagged in, with robust time-based filtering (Days, Weeks, Months, Years).
-* **9.2 Approval & Action View:** A unified queue where users can verify AI-generated messages, send them to respective Slack channels where they were tagged, track follow-up metrics, and click a button to instantly "Create WA Group" with the student.
-* **9.3 Channel & Contact Mapping View:** A configuration page to add and map WhatsApp numbers and Slack channels for specific partners.
-* **9.4 Settings View:** A simplified settings page for global configurations.
+## Phase 9: Core Slack-to-WhatsApp Flow
+**Goal:** Ensure every Slack message is reliably picked up, appears in the dashboard queue, and can be easily sent to the Partner's mapped WhatsApp group.
+* **9.1 Live Slack Webhook Integration:** Upgrade the webhook to handle real Slack Event API payloads, verify URLs, and map tagged users.
+* **9.2 Queue & WhatsApp Routing:** Ensure approved messages in the queue correctly route to the Partner's saved WhatsApp Group ID.
+* **9.3 DNP Quick Actions:** Add a feature to instantly draft and send a WhatsApp message for leads marked as "DNP" (Did Not Pick) directly from the dashboard/queue.
+* **9.4 Mappings & Settings:** Maintain the simplified views to map partners to their respective WhatsApp Group IDs and numbers.

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { Users, ListChecks, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { SimulateWebhook } from '@/components/simulate-webhook';
+import { draftDnpFollowUp } from './actions';
 
 export const dynamic = 'force-dynamic'
 
@@ -98,9 +99,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
                     <span className="text-xs">{new Date(lead.created_at).toLocaleDateString()}</span>
                   </p>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
-                  {lead.status}
-                </span>
+                <div className="flex items-center gap-4">
+                  {lead.status === 'DNP' && (
+                    <form action={draftDnpFollowUp}>
+                      <input type="hidden" name="studentId" value={lead.id} />
+                      <input type="hidden" name="studentName" value={lead.name} />
+                      <input type="hidden" name="partnerName" value={lead.partners?.name} />
+                      <button type="submit" className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-md transition-colors border border-rose-200">
+                        Draft DNP Follow-up
+                      </button>
+                    </form>
+                  )}
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'DNP' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>
+                    {lead.status}
+                  </span>
+                </div>
               </div>
             ))}
             
