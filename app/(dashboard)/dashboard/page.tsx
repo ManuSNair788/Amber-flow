@@ -1,93 +1,126 @@
 import { supabase } from '@/lib/supabase';
-import { Users, FileText, CheckCircle, Clock, ArrowUpRight } from 'lucide-react';
+import { Users, ListChecks, CheckCircle, Clock } from 'lucide-react';
+import Link from 'next/link';
 import { SimulateWebhook } from '@/components/simulate-webhook';
 
-export default async function DashboardPage() {
-  // Fetch real data from the seeded DB
-  const { count: totalLeads } = await supabase.from('students').select('*', { count: 'exact', head: true });
-  const { count: pendingApprovals } = await supabase.from('approvals').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-  const { count: activitiesCount } = await supabase.from('activities').select('*', { count: 'exact', head: true });
+export const dynamic = 'force-dynamic'
 
-  const { data: recentActivities } = await supabase
-    .from('activities')
-    .select('*, students(name)')
-    .order('timestamp', { ascending: false })
+export default async function DashboardPage({ searchParams }: { searchParams: { filter?: string } }) {
+  const filter = searchParams.filter || 'week';
+  
+  // Basic date math for MVP
+  const now = new Date();
+  let startDate = new Date();
+  if (filter === 'today') startDate.setHours(0,0,0,0);
+  if (filter === 'week') startDate.setDate(now.getDate() - 7);
+  if (filter === 'month') startDate.setMonth(now.getMonth() - 1);
+  if (filter === 'year') startDate.setFullYear(now.getFullYear() - 1);
+
+  const isoStart = startDate.toISOString();
+
+  // Fetch data filtered by time
+  const { count: taggedLeads } = await supabase
+    .from('students')
+    .select('*', { count: 'exact', head: true })
+    .gte('created_at', isoStart);
+    
+  const { count: pendingApprovals } = await supabase
+    .from('approvals')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending'); // Usually approvals are current state, not just time-filtered, but could be filtered
+
+  const { data: recentLeads } = await supabase
+    .from('students')
+    .select('*, partners(name)')
+    .gte('created_at', isoStart)
+    .order('created_at', { ascending: false })
     .limit(5);
 
   return (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard title="Total Leads" value={totalLeads || 0} icon={Users} color="bg-blue-50 text-blue-600" trend="+12% from last week" />
-        <KPICard title="Pending Approvals" value={pendingApprovals || 0} icon={Clock} color="bg-amber-50 text-amber-600" trend="Requires attention" />
-        <KPICard title="Total Activities" value={activitiesCount || 0} icon={FileText} color="bg-purple-50 text-purple-600" trend="+5 today" />
-        <KPICard title="Success Rate" value="84%" icon={CheckCircle} color="bg-emerald-50 text-emerald-600" trend="+2% from last month" />
+    <div className="space-y-8 max-w-5xl mx-auto">
+      
+      {/* Header & Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 mt-1">Overview of leads you've been tagged in.</p>
+        </div>
+        
+        <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
+          {['today', 'week', 'month', 'year'].map((f) => (
+            <Link 
+              key={f} 
+              href={`/dashboard?filter=${f}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${filter === f ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+            >
+              {f}
+            </Link>
+          ))}
+        </div>
       </div>
 
-      {/* Panels */}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <KPICard 
+          title="Tagged Leads" 
+          value={taggedLeads || 0} 
+          icon={Users} 
+          color="bg-indigo-50 text-indigo-600" 
+          trend={`In the last ${filter}`} 
+        />
+        <KPICard 
+          title="Pending Actions" 
+          value={pendingApprovals || 0} 
+          icon={ListChecks} 
+          color="bg-amber-50 text-amber-600" 
+          trend="Requires attention" 
+        />
+        <KPICard 
+          title="Avg Response" 
+          value="2.4h" 
+          icon={Clock} 
+          color="bg-emerald-50 text-emerald-600" 
+          trend="Looking good" 
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Recent Activity Panel */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Recent Activity</h3>
-            <button className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-              View All <ArrowUpRight className="w-4 h-4" />
-            </button>
-          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-6">Recent Tagged Leads ({filter})</h3>
+          
           <div className="space-y-4">
-            {recentActivities?.map((activity: any) => (
-              <div key={activity.id} className="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-500">
-                  <Clock className="w-5 h-5" />
-                </div>
+            {recentLeads?.map((lead: any) => (
+              <div key={lead.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 border border-slate-100 transition-colors">
                 <div>
-                  <p className="text-sm text-slate-900">
-                    <span className="font-bold">{activity.students?.name}</span> - {activity.action}
+                  <p className="font-bold text-slate-900">{lead.name}</p>
+                  <p className="text-sm text-slate-500 flex items-center gap-2">
+                    <span>{lead.partners?.name}</span> • 
+                    <span className="text-xs">{new Date(lead.created_at).toLocaleDateString()}</span>
                   </p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                      {activity.status}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {new Date(activity.timestamp).toLocaleDateString()}
-                    </span>
-                  </div>
                 </div>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                  {lead.status}
+                </span>
               </div>
             ))}
+            
+            {(!recentLeads || recentLeads.length === 0) && (
+              <p className="text-center text-slate-500 py-8">No leads found for this time period.</p>
+            )}
           </div>
         </div>
-
-        {/* Quick Actions / AI Insights */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-sm p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-20">
-              <CheckCircle className="w-24 h-24" />
-            </div>
-            <h3 className="text-lg font-bold mb-2 relative z-10">AI Insights</h3>
-            <p className="text-sm text-indigo-100 mb-4 relative z-10">
-              You have 3 leads that require immediate follow-up based on Slack sentiment analysis.
-            </p>
-            <button className="relative z-10 w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-sm font-medium transition-colors">
-              Review Leads
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        
+        <div>
+           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
             <div className="space-y-2">
               <SimulateWebhook />
-              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors border border-transparent hover:border-slate-200">
-                Generate Partner Report
-              </button>
-              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors border border-transparent hover:border-slate-200">
-                Sync Slack Messages
-              </button>
+              <Link href="/queue" className="block w-full text-center px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-sm font-medium text-white transition-colors">
+                View Approval Queue
+              </Link>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -95,7 +128,7 @@ export default async function DashboardPage() {
 
 function KPICard({ title, value, icon: Icon, color, trend }: { title: string, value: string | number, icon: any, color: string, trend: string }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-500">{title}</p>

@@ -50,3 +50,17 @@ This document outlines the step-by-step, phased execution plan to build the Part
 * **7.1 Activity Hooks:** Ensure all user mutations (status changes, approvals) trigger a log entry in the `activities` table.
 * **7.2 Activity Log View:** Implement the global Activity Log page (`app/(dashboard)/activity-log/page.tsx`).
 * **7.3 Final UI/UX Review:** Ensure zero placeholder images are used (replacing them with functional components or generated assets). Verify that all components match the requested high-fidelity prototype.
+
+## Phase 8: Authentication & Security 
+**Goal:** Implement strict access control as defined in `security.md`.
+* **8.1 Domain Restriction:** Create a login wall that rejects any email not ending in `@amberstudent.com`.
+* **8.2 OTP Flow:** Implement a 6-digit One-Time Password (OTP) login flow instead of standard passwords.
+* **8.3 Middleware Enforcement:** Secure all dashboard routes with a Next.js middleware that forces unauthenticated users to the `/login` page.
+* **8.4 Session Management:** Ensure session cookies are securely verified via `@supabase/ssr` on the server before granting access to protected routes.
+
+## Phase 9: High-Fidelity UI Implementation (Core 4 Views)
+**Goal:** Focus entirely on the 4 critical workflows required for the MVP.
+* **9.1 Dashboard View:** A focused analytics dashboard showing how many Leads the user has been tagged in, with robust time-based filtering (Days, Weeks, Months, Years).
+* **9.2 Approval & Action View:** A unified queue where users can verify AI-generated messages, send them to respective Slack channels where they were tagged, track follow-up metrics, and click a button to instantly "Create WA Group" with the student.
+* **9.3 Channel & Contact Mapping View:** A configuration page to add and map WhatsApp numbers and Slack channels for specific partners.
+* **9.4 Settings View:** A simplified settings page for global configurations.

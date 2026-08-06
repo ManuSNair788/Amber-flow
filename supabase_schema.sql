@@ -12,7 +12,9 @@ CREATE TABLE public.users (
 
 CREATE TABLE public.partners (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    slack_channel TEXT,
+    whatsapp_number TEXT
 );
 
 CREATE TABLE public.students (

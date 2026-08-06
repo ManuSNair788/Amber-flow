@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function handleApprove(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
+  const slackChannel = formData.get('slackChannel') as string;
   if (!approvalId) return;
 
   const { data: approval } = await supabase
@@ -17,7 +18,7 @@ export async function handleApprove(formData: FormData) {
   if (approval) {
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: 'Follow-up message approved manually',
+      action: `Message approved & sent to Slack ${slackChannel ? `(${slackChannel})` : ''}`,
       status: 'Approved'
     });
   }
@@ -39,10 +40,23 @@ export async function handleReject(formData: FormData) {
   if (approval) {
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: 'Follow-up message rejected manually',
+      action: 'Follow-up message rejected',
       status: 'Rejected'
     });
   }
+
+  revalidatePath('/queue');
+}
+
+export async function handleCreateWaGroup(formData: FormData) {
+  const studentId = formData.get('studentId') as string;
+  if (!studentId) return;
+
+  await supabase.from('activities').insert({
+    student_id: studentId,
+    action: 'WhatsApp Group created successfully',
+    status: 'Group Created'
+  });
 
   revalidatePath('/queue');
 }
