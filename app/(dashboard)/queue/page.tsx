@@ -13,13 +13,13 @@ export default async function QueuePage() {
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Approval Queue</h1>
-        <p className="text-slate-500 text-sm mt-1">Review and approve messages. Create groups and manage follow-ups.</p>
+        <p className="text-slate-500 text-sm mt-1">Review Slack messages and approve them to be sent to the Partner's WhatsApp group.</p>
       </div>
 
       <div className="grid gap-4">
         {approvals?.map((approval: any) => {
           const partner = approval.students?.partners;
-          const slackChannel = partner?.slack_channel || 'No Slack Mapping';
+          const waNumber = partner?.whatsapp_number || 'No WA Mapping';
           
           return (
           <div key={approval.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
@@ -60,13 +60,11 @@ export default async function QueuePage() {
               <div className="flex items-center justify-between mb-2">
                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                   <MessageSquareWarning className="w-4 h-4 text-indigo-500" />
-                  AI Generated Draft
+                  Extracted from Slack
                 </div>
-                {slackChannel && (
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                    <Slack className="w-3 h-3 text-[#E01E5A]" /> Tagged in {slackChannel}
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                  <Slack className="w-3 h-3 text-[#E01E5A]" /> Partner message detected
+                </div>
               </div>
               <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm whitespace-pre-wrap font-medium">
                 {approval.message}
@@ -77,9 +75,9 @@ export default async function QueuePage() {
             <div className="flex flex-row lg:flex-col gap-3 justify-center">
               <form action={handleApprove}>
                 <input type="hidden" name="approvalId" value={approval.id} />
-                <input type="hidden" name="slackChannel" value={slackChannel} />
+                <input type="hidden" name="waNumber" value={waNumber} />
                 <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                  <Slack className="w-4 h-4" /> Approve & Send
+                  <Phone className="w-4 h-4" /> Approve & Send to WA
                 </button>
               </form>
               <form action={handleReject}>

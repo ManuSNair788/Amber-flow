@@ -5,7 +5,6 @@ import { updateMapping } from './actions'
 import { Check, Save } from 'lucide-react'
 
 export function MappingForm({ partner }: { partner: any }) {
-  const [slack, setSlack] = useState(partner.slack_channel || '')
   const [whatsapp, setWhatsapp] = useState(partner.whatsapp_number || '')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -13,7 +12,7 @@ export function MappingForm({ partner }: { partner: any }) {
   const handleSave = async () => {
     setLoading(true)
     setSaved(false)
-    const res = await updateMapping(partner.id, slack, whatsapp)
+    const res = await updateMapping(partner.id, partner.slack_channel || '', whatsapp)
     setLoading(false)
     if (res?.success) {
       setSaved(true)
@@ -23,26 +22,17 @@ export function MappingForm({ partner }: { partner: any }) {
     }
   }
 
-  const isDirty = slack !== (partner.slack_channel || '') || whatsapp !== (partner.whatsapp_number || '')
+  const isDirty = whatsapp !== (partner.whatsapp_number || '')
 
   return (
     <div className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 transition-colors">
       <div className="col-span-3 font-medium text-slate-900">
         {partner.name}
       </div>
-      <div className="col-span-4">
+      <div className="col-span-8">
         <input
           type="text"
-          placeholder="e.g. C12345678"
-          value={slack}
-          onChange={(e) => setSlack(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-        />
-      </div>
-      <div className="col-span-4">
-        <input
-          type="text"
-          placeholder="e.g. +1234567890"
+          placeholder="e.g. +1234567890 (Partner WA Number)"
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
           className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"

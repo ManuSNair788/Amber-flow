@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function handleApprove(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
-  const slackChannel = formData.get('slackChannel') as string;
+  const waNumber = formData.get('waNumber') as string;
   if (!approvalId) return;
 
   const { data: approval } = await supabase
@@ -18,7 +18,7 @@ export async function handleApprove(formData: FormData) {
   if (approval) {
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: `Message approved & sent to Slack ${slackChannel ? `(${slackChannel})` : ''}`,
+      action: `Message approved & sent to WhatsApp ${waNumber ? `(${waNumber})` : ''}`,
       status: 'Approved'
     });
   }

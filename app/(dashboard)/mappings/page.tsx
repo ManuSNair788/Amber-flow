@@ -30,11 +30,8 @@ export default async function MappingsPage() {
           <div className="col-span-3 flex items-center gap-2">
             <Building2 className="w-4 h-4" /> Partner
           </div>
-          <div className="col-span-4 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-[#E01E5A]" /> Slack Channel ID
-          </div>
-          <div className="col-span-4 flex items-center gap-2">
-            <Phone className="w-4 h-4 text-[#25D366]" /> WhatsApp Number
+          <div className="col-span-8 flex items-center gap-2">
+            <Phone className="w-4 h-4 text-[#25D366]" /> Partner WhatsApp Number
           </div>
           <div className="col-span-1 text-center">Action</div>
         </div>
