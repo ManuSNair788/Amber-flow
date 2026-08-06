@@ -15,7 +15,11 @@ export function SimulateWebhook() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: "Hey POAI, we just got a new lead from AECC. Her name is Maya Patel and she's looking to study CS in the US next Fall. She hasn't paid the deposit yet."
+          type: "event_callback",
+          event: {
+            type: "message",
+            text: "🔗 amberstudent.com/dashboard/leads/812345 maven/ counselor told him to book after cas/ <@Manu Nair> <@Rishabh>"
+          }
         })
       });
       router.refresh();
