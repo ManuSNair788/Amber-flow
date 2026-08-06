@@ -56,18 +56,34 @@ export default async function QueuePage() {
             </div>
 
             {/* Message Content */}
-            <div className="flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <MessageSquareWarning className="w-4 h-4 text-indigo-500" />
-                  Extracted from Slack
+            <div className="flex-1 flex flex-col gap-4">
+              
+              {/* Raw Slack Context */}
+              {approval.raw_slack_context && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                      <Slack className="w-4 h-4 text-[#E01E5A]" />
+                      Extracted from Slack
+                    </div>
+                  </div>
+                  <div className="text-slate-700 text-sm font-medium p-2 bg-white rounded border border-slate-100 shadow-sm">
+                    {approval.raw_slack_context}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                  <Slack className="w-3 h-3 text-[#E01E5A]" /> Partner message detected
+              )}
+
+              {/* AI Draft */}
+              <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                   <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                    <MessageSquareWarning className="w-4 h-4" />
+                    AI Generated WhatsApp Draft
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 text-sm whitespace-pre-wrap font-medium">
-                {approval.message}
+                <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">
+                  {approval.message}
+                </div>
               </div>
             </div>
 

@@ -40,6 +40,7 @@ CREATE TABLE public.activities (
 CREATE TABLE public.approvals (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     student_id UUID REFERENCES public.students(id) ON DELETE CASCADE,
+    raw_slack_context TEXT,
     message TEXT NOT NULL,
     status TEXT DEFAULT 'pending', -- pending, approved, rejected
     approved_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
@@ -68,7 +69,7 @@ INSERT INTO public.partners (name) VALUES
     ('Leap Scholar'), 
     ('AECC'), 
     ('IDP'), 
-    ('Crizac');
+    ('maven');
 
 -- Insert Mock Students (Fetching the partner IDs dynamically)
 DO $$
@@ -86,7 +87,7 @@ BEGIN
     SELECT id INTO leap_id FROM public.partners WHERE name = 'Leap Scholar';
     SELECT id INTO aecc_id FROM public.partners WHERE name = 'AECC';
     SELECT id INTO idp_id FROM public.partners WHERE name = 'IDP';
-    SELECT id INTO crizac_id FROM public.partners WHERE name = 'Crizac';
+    SELECT id INTO crizac_id FROM public.partners WHERE name = 'maven';
 
     INSERT INTO public.students (id, prospect_id, name, partner_id, status, notes) VALUES 
         (gen_random_uuid(), '812341', 'Rahul Sharma', leap_id, 'DNP', 'DNP after 3 attempts. Please continue follow-up.') RETURNING id INTO rahul_id;
@@ -106,8 +107,8 @@ BEGIN
         (aman_id, 'Added to queue', 'Deposit Pending');
 
     -- Insert Mock Approvals
-    INSERT INTO public.approvals (student_id, message, status) VALUES 
-        (rahul_id, 'Hi Team, Student Rahul Sharma (Prospect ID: 812341) has been marked as DNP after multiple contact attempts. Kindly continue follow-up from your side.', 'pending'),
-        (priya_id, 'Hi Team, Priya Nair is highly interested for Fall 2026. Please share the course brochures.', 'approved'),
-        (aman_id, 'Hi Team, Aman Verma is awaiting loan approval. Please hold the deposit deadline for 3 days.', 'pending');
+    INSERT INTO public.approvals (student_id, raw_slack_context, message, status) VALUES 
+        (karan_id, '🔗 amberstudent.com/dashboard/leads/812345 maven/ counselor told him to book after cas/ @Manu Nair @Rishabh', 'Hi maven team, regarding the student (ID: 812345), we noted the counselor advised booking after CAS. Let us know if you need any assistance securing the CAS!', 'pending'),
+        (rahul_id, '🔗 amberstudent.com/dashboard/leads/812341 Leap Scholar/ DNP after 3 attempts / @Manu Nair', 'Hi Leap Scholar team, student Rahul Sharma (Prospect ID: 812341) has been marked as DNP after multiple contact attempts. Kindly continue follow-up from your side.', 'pending'),
+        (priya_id, '🔗 amberstudent.com/dashboard/leads/812342 AECC/ Highly interested for Fall 2026 / @Rishabh', 'Hi AECC team, Priya Nair is highly interested for Fall 2026. Please share the course brochures.', 'approved');
 END $$;
