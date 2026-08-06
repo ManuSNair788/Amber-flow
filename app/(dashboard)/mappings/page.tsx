@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { Network, MessageSquare, Phone, Building2 } from 'lucide-react'
+import { Network, Phone, Building2, Users } from 'lucide-react'
 import { MappingForm } from './mapping-form'
 
 export const metadata = {
@@ -30,8 +30,11 @@ export default async function MappingsPage() {
           <div className="col-span-3 flex items-center gap-2">
             <Building2 className="w-4 h-4" /> Partner
           </div>
-          <div className="col-span-8 flex items-center gap-2">
-            <Phone className="w-4 h-4 text-[#25D366]" /> Partner WhatsApp Number
+          <div className="col-span-4 flex items-center gap-2">
+            <Phone className="w-4 h-4 text-[#25D366]" /> Partner WA Number
+          </div>
+          <div className="col-span-4 flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#25D366]" /> WA Group ID
           </div>
           <div className="col-span-1 text-center">Action</div>
         </div>

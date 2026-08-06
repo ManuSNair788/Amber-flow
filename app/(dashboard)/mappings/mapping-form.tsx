@@ -6,13 +6,14 @@ import { Check, Save } from 'lucide-react'
 
 export function MappingForm({ partner }: { partner: any }) {
   const [whatsapp, setWhatsapp] = useState(partner.whatsapp_number || '')
+  const [whatsappGroup, setWhatsappGroup] = useState(partner.whatsapp_group_id || '')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const handleSave = async () => {
     setLoading(true)
     setSaved(false)
-    const res = await updateMapping(partner.id, partner.slack_channel || '', whatsapp)
+    const res = await updateMapping(partner.id, whatsapp, whatsappGroup)
     setLoading(false)
     if (res?.success) {
       setSaved(true)
@@ -22,19 +23,28 @@ export function MappingForm({ partner }: { partner: any }) {
     }
   }
 
-  const isDirty = whatsapp !== (partner.whatsapp_number || '')
+  const isDirty = whatsapp !== (partner.whatsapp_number || '') || whatsappGroup !== (partner.whatsapp_group_id || '')
 
   return (
     <div className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 transition-colors">
       <div className="col-span-3 font-medium text-slate-900">
         {partner.name}
       </div>
-      <div className="col-span-8">
+      <div className="col-span-4">
         <input
           type="text"
-          placeholder="e.g. +1234567890 (Partner WA Number)"
+          placeholder="e.g. +1234567890 (Direct Number)"
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+        />
+      </div>
+      <div className="col-span-4">
+        <input
+          type="text"
+          placeholder="e.g. 1203632... (Group ID)"
+          value={whatsappGroup}
+          onChange={(e) => setWhatsappGroup(e.target.value)}
           className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
         />
       </div>
