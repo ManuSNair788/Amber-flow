@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Network, Phone, Building2, Users } from 'lucide-react'
 import { MappingForm } from './mapping-form'
+import { fetchWhatsAppGroups } from './actions'
 
 export const metadata = {
   title: 'Channel Mappings | POAI'
@@ -12,6 +13,8 @@ export default async function MappingsPage() {
     .from('partners')
     .select('*')
     .order('name')
+
+  const { groups, error: groupsError } = await fetchWhatsAppGroups()
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -41,7 +44,12 @@ export default async function MappingsPage() {
         
         <div className="divide-y divide-slate-100">
           {partners?.map((partner) => (
-            <MappingForm key={partner.id} partner={partner} />
+            <MappingForm 
+              key={partner.id} 
+              partner={partner} 
+              groups={groups} 
+              groupsError={groupsError} 
+            />
           ))}
           
           {(!partners || partners.length === 0) && (

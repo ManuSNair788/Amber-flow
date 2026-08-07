@@ -4,7 +4,15 @@ import { useState } from 'react'
 import { updateMapping } from './actions'
 import { Check, Save } from 'lucide-react'
 
-export function MappingForm({ partner }: { partner: any }) {
+export function MappingForm({ 
+  partner, 
+  groups = [], 
+  groupsError = null 
+}: { 
+  partner: any, 
+  groups?: Array<{id: string, name: string}>,
+  groupsError?: string | null 
+}) {
   const [whatsapp, setWhatsapp] = useState(partner.whatsapp_number || '')
   const [whatsappGroup, setWhatsappGroup] = useState(partner.whatsapp_group_id || '')
   const [loading, setLoading] = useState(false)
@@ -40,13 +48,28 @@ export function MappingForm({ partner }: { partner: any }) {
         />
       </div>
       <div className="col-span-4">
-        <input
-          type="text"
-          placeholder="e.g. 1203632... (Group ID)"
-          value={whatsappGroup}
-          onChange={(e) => setWhatsappGroup(e.target.value)}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
-        />
+        {groups.length > 0 ? (
+          <select
+            value={whatsappGroup}
+            onChange={(e) => setWhatsappGroup(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          >
+            <option value="">Select a WhatsApp Group...</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            placeholder={groupsError ? "Bot offline. Type Group ID..." : "e.g. 1203632... (Group ID)"}
+            value={whatsappGroup}
+            onChange={(e) => setWhatsappGroup(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+          />
+        )}
       </div>
       <div className="col-span-1 text-right">
         {saved ? (
