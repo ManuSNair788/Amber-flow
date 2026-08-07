@@ -12,10 +12,31 @@ export async function handleApprove(formData: FormData) {
     .from('approvals')
     .update({ status: 'approved' })
     .eq('id', approvalId)
-    .select('student_id')
+    .select('student_id, message')
     .single();
 
   if (approval) {
+    // Attempt to send message via the new WhatsApp Bot Microservice
+    try {
+      // In production, this URL would be an env variable pointing to your Render/Railway instance
+      const BOT_URL = process.env.WHATSAPP_BOT_URL || 'http://localhost:3001';
+      
+      const response = await fetch(`${BOT_URL}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId: waNumber, // This assumes waNumber is mapped to the internal WA Group ID (e.g. 1234@g.us)
+          message: approval.message
+        })
+      });
+
+      if (!response.ok) {
+        console.error('WhatsApp Bot failed to send message:', await response.text());
+      }
+    } catch (e) {
+      console.error('Failed to connect to WhatsApp bot:', e);
+    }
+
     await supabase.from('activities').insert({
       student_id: approval.student_id,
       action: `Message approved & sent to WhatsApp ${waNumber ? `(${waNumber})` : ''}`,
