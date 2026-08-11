@@ -126,7 +126,7 @@ export async function POST(req: Request) {
 
     if (studentError || !student) {
       console.error("Student insert failed:", studentError);
-      return NextResponse.json({ error: "Failed to insert student" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to insert student", details: studentError?.message }, { status: 500 });
     }
 
     // 8. Draft Generation (using Groq)
