@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     // 6. AI Extraction (using Groq)
     const extractionPrompt = `
       Extract the following information from the message below and output ONLY valid JSON.
-      Required keys: "student_name", "partner_name", "status", "notes", "tagged_users" (array of strings, e.g. ["<@U1234>"]).
+      Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
       If you can't find a value, use null.
       Message: "${text}"
     `;
@@ -101,8 +101,8 @@ export async function POST(req: Request) {
     }
 
     // 6. Smart Filter: Ignore random conversational messages
-    if (!extracted.student_name || !extracted.partner_name || extracted.student_name === 'null' || extracted.partner_name === 'null') {
-      console.log("Ignored by Smart Filter: Message does not contain valid lead data (missing student or partner).");
+    if (!extracted.partner_name || extracted.partner_name === 'null') {
+      console.log("Ignored by Smart Filter: Message does not contain a partner name.");
       return NextResponse.json({ status: 'ignored_not_a_lead' });
     }
 
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
     }
 
     // 7. Insert Student
-    const prospect_id = Math.floor(100000 + Math.random() * 900000).toString();
+    const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
     const { data: student, error: studentError } = await supabase
       .from('students')
       .insert({
