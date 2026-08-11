@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function handleApprove(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
-  const waNumber = formData.get('waNumber') as string;
+  const waGroupId = formData.get('waGroupId') as string;
   if (!approvalId) return;
 
   const { data: approval } = await supabase
@@ -25,7 +25,7 @@ export async function handleApprove(formData: FormData) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          groupId: waNumber, // This assumes waNumber is mapped to the internal WA Group ID (e.g. 1234@g.us)
+          groupId: waGroupId, // This assumes waGroupId is mapped to the internal WA Group ID (e.g. 1234@g.us)
           message: approval.message
         })
       });
@@ -39,7 +39,7 @@ export async function handleApprove(formData: FormData) {
 
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: `Message approved & sent to WhatsApp ${waNumber ? `(${waNumber})` : ''}`,
+      action: `Message approved & sent to WhatsApp ${waGroupId ? `(${waGroupId})` : ''}`,
       status: 'Approved'
     });
   }
@@ -78,6 +78,51 @@ export async function handleCreateWaGroup(formData: FormData) {
     action: 'WhatsApp Group created successfully',
     status: 'Group Created'
   });
+
+  revalidatePath('/queue');
+}
+
+export async function handleDnpQuickAction(formData: FormData) {
+  const approvalId = formData.get('approvalId') as string;
+  const waGroupId = formData.get('waGroupId') as string;
+  if (!approvalId) return;
+
+  const { data: approval } = await supabase
+    .from('approvals')
+    .update({ status: 'rejected' })
+    .eq('id', approvalId)
+    .select('student_id, students(name)')
+    .single();
+
+  if (approval) {
+    const studentName = (approval.students as any)?.name || 'the student';
+    const dnpMessage = `Hi Team, we attempted to contact ${studentName} but they did not pick up (DNP). We will attempt to follow up again later.`;
+
+    try {
+      const BOT_URL = process.env.WHATSAPP_BOT_URL || 'http://localhost:3001';
+      
+      const response = await fetch(`${BOT_URL}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId: waGroupId,
+          message: dnpMessage
+        })
+      });
+
+      if (!response.ok) {
+        console.error('WhatsApp Bot failed to send DNP message:', await response.text());
+      }
+    } catch (e) {
+      console.error('Failed to connect to WhatsApp bot:', e);
+    }
+
+    await supabase.from('activities').insert({
+      student_id: approval.student_id,
+      action: `DNP Quick Action sent to WhatsApp`,
+      status: 'DNP Handled'
+    });
+  }
 
   revalidatePath('/queue');
 }

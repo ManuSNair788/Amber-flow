@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Check, X, Edit3, MessageSquareWarning, Slack, Phone } from 'lucide-react';
-import { handleApprove, handleReject, handleCreateWaGroup } from './actions';
+import { handleApprove, handleReject, handleCreateWaGroup, handleDnpQuickAction } from './actions';
 
 export default async function QueuePage() {
   const { data: approvals } = await supabase
@@ -19,7 +19,7 @@ export default async function QueuePage() {
       <div className="grid gap-4">
         {approvals?.map((approval: any) => {
           const partner = approval.students?.partners;
-          const waNumber = partner?.whatsapp_number || 'No WA Mapping';
+          const waGroupId = partner?.whatsapp_group_id || '';
           
           return (
           <div key={approval.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
@@ -91,11 +91,22 @@ export default async function QueuePage() {
             <div className="flex flex-row lg:flex-col gap-3 justify-center">
               <form action={handleApprove}>
                 <input type="hidden" name="approvalId" value={approval.id} />
-                <input type="hidden" name="waNumber" value={waNumber} />
+                <input type="hidden" name="waGroupId" value={waGroupId} />
                 <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
                   <Phone className="w-4 h-4" /> Approve & Send to WA
                 </button>
               </form>
+
+              {approval.students?.status === 'DNP' && (
+                <form action={handleDnpQuickAction}>
+                  <input type="hidden" name="approvalId" value={approval.id} />
+                  <input type="hidden" name="waGroupId" value={waGroupId} />
+                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                    <MessageSquareWarning className="w-4 h-4" /> DNP Quick Action
+                  </button>
+                </form>
+              )}
+
               <form action={handleReject}>
                 <input type="hidden" name="approvalId" value={approval.id} />
                 <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors">
