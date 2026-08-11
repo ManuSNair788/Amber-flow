@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         { role: "system", content: "You are a JSON-only data extraction bot." },
         { role: "user", content: extractionPrompt }
       ],
-      model: "llama3-8b-8192",
+      model: "llama-3.1-8b-instant",
       response_format: { type: "json_object" }
     });
 
@@ -147,7 +147,7 @@ export async function POST(req: Request) {
           { role: "system", content: "You are a helpful partnership operations assistant drafting WhatsApp messages." },
           { role: "user", content: draftPrompt }
         ],
-        model: "llama3-8b-8192",
+        model: "llama-3.1-8b-instant",
       });
       draftedMessage = draftCompletion.choices[0]?.message?.content || draftedMessage;
     } catch(e) {
