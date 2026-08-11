@@ -138,9 +138,13 @@ export async function POST(req: Request) {
       .select('id')
       .single();
 
-    if (studentError || !student) {
+    if (studentError) {
       console.error("Student insert failed:", studentError);
-      return NextResponse.json({ error: "Failed to insert student", details: studentError?.message }, { status: 500 });
+      if (studentError.code === '23505') {
+        // Duplicate key (lead already exists). Return 200 to keep Slack happy.
+        return NextResponse.json({ status: 'ignored_duplicate' });
+      }
+      return NextResponse.json({ error: "Failed to insert student" }, { status: 500 });
     }
 
     // 8. Draft Generation (using Groq)
