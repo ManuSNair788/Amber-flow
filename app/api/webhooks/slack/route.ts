@@ -93,7 +93,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to parse AI output" }, { status: 500 });
     }
 
-    // 6. Resolve Partner ID
+    // 6. Smart Filter: Ignore random conversational messages
+    if (!extracted.student_name || !extracted.partner_name || extracted.student_name === 'null' || extracted.partner_name === 'null') {
+      console.log("Ignored: Message does not contain valid lead data.");
+      return NextResponse.json({ status: 'ignored_not_a_lead' });
+    }
+
+    // 7. Resolve Partner ID
     let partnerId = null;
     if (extracted.partner_name) {
       const { data: partnerData } = await supabase
