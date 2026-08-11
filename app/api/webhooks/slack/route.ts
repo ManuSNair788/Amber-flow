@@ -62,10 +62,10 @@ export async function POST(req: Request) {
     const mySlackId = process.env.MY_SLACK_USER_ID; 
     
     // If the environment variable is set, enforce the filtering rule
-    if (mySlackId && !text.includes(`<@${mySlackId}>`)) {
-       // Ignore the message because you were not tagged
-       return NextResponse.json({ status: 'ignored_not_tagged' });
-    }
+    // if (mySlackId && !text.includes(`<@${mySlackId}>`)) {
+    //    // Ignore the message because you were not tagged
+    //    return NextResponse.json({ status: 'ignored_not_tagged' });
+    // }
 
     // 6. AI Extraction (using Groq)
     const extractionPrompt = `
