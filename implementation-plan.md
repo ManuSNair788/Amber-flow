@@ -58,9 +58,13 @@ This document outlines the step-by-step, phased execution plan to build the Part
 * **8.3 Middleware Enforcement:** Secure all dashboard routes with a Next.js middleware that forces unauthenticated users to the `/login` page.
 * **8.4 Session Management:** Ensure session cookies are securely verified via `@supabase/ssr` on the server before granting access to protected routes.
 
-## Phase 9: Core Slack-to-WhatsApp Flow
-**Goal:** Ensure every Slack message is reliably picked up, appears in the dashboard queue, and can be easily sent to the Partner's mapped WhatsApp group.
-* **9.1 Live Slack Webhook Integration:** Upgrade the webhook to handle real Slack Event API payloads, verify URLs, and map tagged users.
-* **9.2 Queue & WhatsApp Routing:** Ensure approved messages in the queue correctly route to the Partner's saved WhatsApp Group ID.
-* **9.3 DNP Quick Actions:** Add a feature to instantly draft and send a WhatsApp message for leads marked as "DNP" (Did Not Pick) directly from the dashboard/queue.
-* **9.4 Mappings & Settings:** Maintain the simplified views to map partners to their respective WhatsApp Group IDs and numbers.
+## Phase 9: Core Slack-to-Agent Flow
+**Goal:** Ensure every Slack message is securely picked up, verified, processed by the AI agent, and correctly queued in the dashboard.
+* **9.1 Live Slack Webhook Integration:** Upgrade the webhook to handle real Slack Event API payloads, verify URLs, and map tagged users securely using the Slack Signing Secret.
+* **9.2 AI Extraction & Queue Generation:** Refine the extraction prompts and ensure the drafted messages accurately populate the approval queue.
+
+## Phase 10: Agent-to-WhatsApp Flow
+**Goal:** Ensure approved messages in the queue can be seamlessly dispatched to the Partner's mapped WhatsApp group, along with manual override actions.
+* **10.1 Queue & WhatsApp Routing:** Ensure approved messages in the queue correctly route to the Partner's saved WhatsApp Group ID.
+* **10.2 DNP Quick Actions:** Add a feature to instantly draft and send a WhatsApp message for leads marked as "DNP" (Did Not Pick) directly from the dashboard/queue.
+* **10.3 Mappings & Settings:** Maintain the simplified views to map partners to their respective WhatsApp Group IDs and numbers.
