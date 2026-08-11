@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { Check, X, Edit3, MessageSquareWarning, Slack, Phone } from 'lucide-react';
 import { handleApprove, handleReject, handleCreateWaGroup, handleDnpQuickAction } from './actions';
 
+export const dynamic = 'force-dynamic';
+
 export default async function QueuePage() {
   const { data: approvals } = await supabase
     .from('approvals')
