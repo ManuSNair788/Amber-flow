@@ -53,8 +53,12 @@ export async function POST(req: Request) {
 
     const text = body.event.text;
     if (!text) {
+      console.log("Ignored: Missing text payload");
       return NextResponse.json({ error: "Missing text payload" }, { status: 400 });
     }
+
+    console.log("--- NEW SLACK MESSAGE RECEIVED ---");
+    console.log("Raw Text:", text);
 
     // 5. Verify the Official User was Tagged (Eavesdrop Logic)
     // The bot listens to all messages in the channel (message.channels event)
@@ -75,6 +79,7 @@ export async function POST(req: Request) {
       Message: "${text}"
     `;
 
+    console.log("Sending to Groq AI...");
     const extractCompletion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: "You are a JSON-only data extraction bot." },
@@ -85,6 +90,8 @@ export async function POST(req: Request) {
     });
 
     const extractedStr = extractCompletion.choices[0]?.message?.content || '{}';
+    console.log("AI Extraction Result:", extractedStr);
+    
     let extracted;
     try {
       extracted = JSON.parse(extractedStr);
@@ -95,10 +102,11 @@ export async function POST(req: Request) {
 
     // 6. Smart Filter: Ignore random conversational messages
     if (!extracted.student_name || !extracted.partner_name || extracted.student_name === 'null' || extracted.partner_name === 'null') {
-      console.log("Ignored: Message does not contain valid lead data.");
+      console.log("Ignored by Smart Filter: Message does not contain valid lead data (missing student or partner).");
       return NextResponse.json({ status: 'ignored_not_a_lead' });
     }
 
+    console.log("Smart Filter Passed. Resolving Partner ID...");
     // 7. Resolve Partner ID
     let partnerId = null;
     if (extracted.partner_name) {
