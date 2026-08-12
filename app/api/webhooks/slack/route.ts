@@ -174,21 +174,29 @@ export async function POST(req: Request) {
     }
 
     // 9. Insert Approval Queue with raw slack context
-    await supabase.from('approvals').insert({
+    const { error: approvalError } = await supabase.from('approvals').insert({
       student_id: student.id,
       raw_slack_context: text,
       message: draftedMessage,
       status: 'pending'
     });
+    
+    if (approvalError) {
+      console.error("Approval insert failed:", approvalError);
+    }
 
     // 10. Log Activity
-    await supabase.from('activities').insert({
+    const { error: activityError } = await supabase.from('activities').insert({
       student_id: student.id,
       action: 'Lead extracted from Slack & Added to Queue',
       status: 'New'
     });
 
-    return NextResponse.json({ success: true, student, draftedMessage });
+    if (activityError) {
+      console.error("Activity insert failed:", activityError);
+    }
+
+    return NextResponse.json({ success: true, student, draftedMessage, approvalError, activityError });
 
   } catch (error: any) {
     console.error("Webhook unexpected error:", error);
