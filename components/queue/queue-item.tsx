@@ -279,6 +279,7 @@ export function QueueItem({
             )}
           </>
         )}
+      </div>
     </div>
   );
 }
