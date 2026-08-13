@@ -1,7 +1,7 @@
 'use client'
 
 import { Calendar, Bell } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { LiveNotifications } from './live-notifications';
 import { DateRangePicker } from './date-range-picker';
 
@@ -29,7 +29,9 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-6">
-        <DateRangePicker />
+        <Suspense fallback={<div className="h-9 w-32 bg-slate-100 animate-pulse rounded-lg"></div>}>
+          <DateRangePicker />
+        </Suspense>
         
         <LiveNotifications />
 
