@@ -347,3 +347,60 @@ export async function handleReplyToSlackThread(formData: FormData) {
   revalidatePath('/queue');
   return { success: true };
 }
+
+export async function handleIgnoreFollowup(formData: FormData) {
+  const approvalId = formData.get('approvalId') as string;
+  if (!approvalId) return { success: false, error: 'Missing approvalId' };
+
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('student_id, slack_threads(slack_channel_id, slack_thread_ts)')
+    .eq('id', approvalId)
+    .single();
+
+  if (approval) {
+    const slackThread = approval.slack_threads as any;
+    
+    if (slackThread?.slack_thread_ts) {
+      if (!process.env.SLACK_BOT_TOKEN) {
+        return { success: false, error: "SLACK_BOT_TOKEN environment variable is missing. Cannot post to Slack." };
+      }
+      
+      try {
+        const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            channel: slackThread.slack_channel_id,
+            thread_ts: slackThread.slack_thread_ts,
+            text: "👍"
+          })
+        });
+        
+        const data = await slackRes.json();
+        if (!data.ok) {
+           console.error('Slack API error:', data.error);
+           return { success: false, error: `Slack API error: ${data.error}` };
+        }
+      } catch (err: any) {
+        console.error('Failed to send Slack reply:', err);
+        return { success: false, error: err.message };
+      }
+    }
+
+    // Mark as approved (resolved)
+    await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalId);
+    
+    await supabase.from('activities').insert({
+      student_id: approval.student_id,
+      action: `Ignored follow-up (Sent 👍)`,
+      status: 'Ignored'
+    });
+  }
+
+  revalidatePath('/queue');
+  return { success: true };
+}

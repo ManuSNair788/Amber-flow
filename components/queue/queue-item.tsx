@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink, Send } from 'lucide-react';
+import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink, Send, ThumbsUp } from 'lucide-react';
 
 function ClockIcon() {
   return (
@@ -30,7 +30,8 @@ export function QueueItem({
   handleDnpQuickAction: (formData: FormData) => void,
   handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>,
   handleGenerateDraft: (formData: FormData) => Promise<void>,
-  handleReplyToSlackThread?: (formData: FormData) => Promise<{ success: boolean, error?: string } | void>
+  handleReplyToSlackThread?: (formData: FormData) => Promise<{ success: boolean, error?: string } | void>,
+  handleIgnoreFollowup?: (formData: FormData) => Promise<{ success: boolean, error?: string } | void>
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(approval.message);
@@ -54,6 +55,23 @@ export function QueueItem({
       const result = await handleReplyToSlackThread(formData);
       if (result && !result.success) {
         alert(result.error || "Failed to send response to Slack.");
+      } else {
+        setIsResolved(true);
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  const onIgnore = async (formData: FormData) => {
+    if (!handleIgnoreFollowup) return;
+    setIsReplying(true);
+    try {
+      const result = await handleIgnoreFollowup(formData);
+      if (result && !result.success) {
+        alert(result.error || "Failed to ignore thread on Slack.");
       } else {
         setIsResolved(true);
       }
@@ -235,25 +253,38 @@ export function QueueItem({
       <div className="flex flex-row lg:flex-col gap-3 justify-center">
         {approval.is_followup ? (
           <div className="flex flex-col gap-2 w-full">
-            <form action={onReply} className="flex flex-col gap-2">
-              <input type="hidden" name="approvalId" value={approval.id} />
-              <textarea 
-                name="replyMessage"
-                placeholder="Type your response here..."
-                required
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                className="w-full text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-800 resize-none min-h-[100px]"
-              />
-              <button 
-                type="submit" 
-                disabled={isReplying || !replyText.trim()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
-              >
-                {isReplying ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {isReplying ? 'Sending...' : 'Send Response'}
-              </button>
-            </form>
+            <div className="flex flex-col gap-2">
+              <form action={onReply} className="flex flex-col gap-2">
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <textarea 
+                  name="replyMessage"
+                  placeholder="Type your response here..."
+                  required
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="w-full text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-800 resize-none min-h-[100px]"
+                />
+                <button 
+                  type="submit" 
+                  disabled={isReplying || !replyText.trim()}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isReplying ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {isReplying ? 'Sending...' : 'Send Response'}
+                </button>
+              </form>
+
+              <form action={onIgnore}>
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <button 
+                  type="submit" 
+                  disabled={isReplying}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors border border-slate-200 shadow-sm disabled:opacity-50"
+                >
+                  <ThumbsUp className="w-4 h-4" /> Ignore & Acknowledge
+                </button>
+              </form>
+            </div>
           </div>
         ) : (
           <>
