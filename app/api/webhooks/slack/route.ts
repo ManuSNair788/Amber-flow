@@ -221,7 +221,7 @@ export async function POST(req: Request) {
     const ts = body.event?.ts;
     let rawContext = text;
     if (teamId && channelId && ts) {
-      rawContext += `\n\nSLACK_URL:https://app.slack.com/client/${teamId}/${channelId}/p${ts.replace('.', '')}`;
+      rawContext += `\n\nSLACK_URL:https://slack.com/archives/${channelId}/p${ts.replace('.', '')}`;
     }
 
     const { error: approvalError } = await supabase.from('approvals').insert({

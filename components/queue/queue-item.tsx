@@ -115,7 +115,7 @@ export function QueueItem({
   if (isResolved) return null;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
+    <div id={`approval-${approval.id}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6 scroll-mt-6">
       {/* Student Info */}
       <div className="lg:w-1/4 border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
         <div className="flex items-center gap-3 mb-4">

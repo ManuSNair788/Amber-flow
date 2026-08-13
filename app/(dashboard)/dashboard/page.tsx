@@ -147,7 +147,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 : `Initial Lead pending`;
 
               return (
-                <Link key={item.id} href="/queue" className="group flex flex-col justify-center p-4 rounded-xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 transition-all hover:shadow-sm relative">
+                <Link key={item.id} href={`/queue#approval-${item.id}`} className="group flex flex-col justify-center p-4 rounded-xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 transition-all hover:shadow-sm relative">
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <ArrowRight className="w-5 h-5 text-amber-500" />
                   </div>
@@ -184,7 +184,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               if (student.approvals && Array.isArray(student.approvals)) {
                 const approvalWithUrl = student.approvals.find((a: any) => a.raw_slack_context?.includes('SLACK_URL:'));
                 if (approvalWithUrl) {
-                  slackUrl = approvalWithUrl.raw_slack_context.split('SLACK_URL:')[1].trim();
+                  const rawUrl = approvalWithUrl.raw_slack_context.split('SLACK_URL:')[1].trim();
+                  // Convert client URLs to archives URLs which handle precise message deep linking better
+                  if (rawUrl.includes('app.slack.com/client')) {
+                    const parts = rawUrl.split('/');
+                    const channelId = parts[parts.length - 2];
+                    const ts = parts[parts.length - 1];
+                    slackUrl = `https://slack.com/archives/${channelId}/${ts}`;
+                  } else {
+                    slackUrl = rawUrl;
+                  }
                 }
               }
 
