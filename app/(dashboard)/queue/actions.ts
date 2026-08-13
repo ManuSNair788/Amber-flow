@@ -79,8 +79,9 @@ export async function handleSendToWhatsApp(formData: FormData) {
 
   const { data: approval } = await supabase
     .from('approvals')
-    .select('student_id, message')
+    .update({ status: 'approved' })
     .eq('id', approvalId)
+    .select('student_id, message, slack_threads(slack_channel_id, slack_thread_ts)')
     .single();
 
   if (approval) {
@@ -105,9 +106,33 @@ export async function handleSendToWhatsApp(formData: FormData) {
       console.error('Failed to connect to WhatsApp bot:', e);
     }
 
+    if (approval.slack_threads?.slack_thread_ts) {
+      const replyText = `✅ Approved! Message forwarded to partner WhatsApp group.`;
+      console.log(`[SLACK AUTO-REPLY] Thread ${approval.slack_threads.slack_thread_ts}: ${replyText}`);
+      
+      if (process.env.SLACK_BOT_TOKEN) {
+        try {
+          await fetch('https://slack.com/api/chat.postMessage', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              channel: approval.slack_threads.slack_channel_id,
+              thread_ts: approval.slack_threads.slack_thread_ts,
+              text: replyText
+            })
+          });
+        } catch (err) {
+          console.error('Failed to send Slack reply:', err);
+        }
+      }
+    }
+
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: `Message sent to WhatsApp ${waGroupId ? `(${waGroupId})` : ''}`,
+      action: `Message approved & sent to WhatsApp ${waGroupId ? `(${waGroupId})` : ''}`,
       status: 'Message Sent'
     });
   }
@@ -117,19 +142,43 @@ export async function handleSendToWhatsApp(formData: FormData) {
 
 export async function handleReject(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
+  const reason = formData.get('reason') as string || 'No reason provided';
   if (!approvalId) return;
 
   const { data: approval } = await supabase
     .from('approvals')
-    .update({ status: 'rejected' })
+    .update({ status: 'rejected', rejection_reason: reason })
     .eq('id', approvalId)
-    .select('student_id')
+    .select('student_id, slack_threads(slack_channel_id, slack_thread_ts)')
     .single();
 
   if (approval) {
+    if (approval.slack_threads?.slack_thread_ts) {
+      const replyText = `❌ Message Rejected.\n*Reason:* ${reason}`;
+      console.log(`[SLACK AUTO-REPLY] Thread ${approval.slack_threads.slack_thread_ts}: ${replyText}`);
+      
+      if (process.env.SLACK_BOT_TOKEN) {
+        try {
+          await fetch('https://slack.com/api/chat.postMessage', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              channel: approval.slack_threads.slack_channel_id,
+              thread_ts: approval.slack_threads.slack_thread_ts,
+              text: replyText
+            })
+          });
+        } catch (err) {
+          console.error('Failed to send Slack reply:', err);
+        }
+      }
+    }
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: 'Follow-up message rejected',
+      action: `Follow-up message rejected (Reason: ${reason})`,
       status: 'Rejected'
     });
   }

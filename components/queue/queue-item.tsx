@@ -34,6 +34,8 @@ export function QueueItem({
   const [message, setMessage] = useState(approval.message);
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   
   const partner = approval.students?.partners;
 
@@ -54,6 +56,40 @@ export function QueueItem({
     }
   }
 
+  if (approval.is_followup) {
+    return (
+      <div className="bg-amber-50 rounded-2xl shadow-sm border border-amber-200 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold shadow-inner">
+            {approval.students?.name?.charAt(0) || 'U'}
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900">{approval.students?.name || 'Unknown Lead'}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs font-semibold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md">
+                Follow-up #{approval.followup_number}
+              </span>
+              <span className="text-xs text-slate-500">Pending Action</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex-1 px-4 hidden md:block">
+           <p className="text-sm text-slate-600 truncate opacity-70">
+             {approval.raw_slack_context?.split('SLACK_URL:')[0].trim()}
+           </p>
+        </div>
+
+        <a 
+          href={`/leads/${approval.student_id}`}
+          className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+        >
+          <ExternalLink className="w-4 h-4" /> Open POAI Thread
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
       {/* Student Info */}
@@ -72,9 +108,11 @@ export function QueueItem({
           <p><span className="font-medium text-slate-900">Status:</span> {approval.students?.status}</p>
           
           {/* Follow up Metric requested by user */}
-          <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-semibold mt-2 border border-amber-200">
-            <ClockIcon /> Follow-up #2
-          </div>
+          {approval.is_followup && (
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-semibold mt-2 border border-amber-200">
+              <ClockIcon /> Follow-up #{approval.followup_number}
+            </div>
+          )}
         </div>
 
         {/* Create WA Group Action */}
@@ -203,12 +241,46 @@ export function QueueItem({
           </form>
         )}
 
-        <form action={handleReject}>
-          <input type="hidden" name="approvalId" value={approval.id} />
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors">
+        {!showRejectInput ? (
+          <button 
+            type="button" 
+            onClick={() => setShowRejectInput(true)} 
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors"
+          >
             <X className="w-4 h-4" /> Reject
           </button>
-        </form>
+        ) : (
+          <form action={handleReject} className="flex flex-col gap-2 bg-rose-50 p-3 rounded-lg border border-rose-100">
+            <input type="hidden" name="approvalId" value={approval.id} />
+            <input 
+              type="text" 
+              name="reason" 
+              placeholder="Reason for rejection..." 
+              required
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              className="w-full text-sm p-2 rounded border border-rose-200 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400 text-slate-800"
+            />
+            <div className="flex gap-2">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowRejectInput(false);
+                  setRejectReason("");
+                }}
+                className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded"
+              >
+                <X className="w-3 h-3" /> Confirm
+              </button>
+            </div>
+          </form>
+        )}
         {!isEditing && (
           <button 
             type="button"

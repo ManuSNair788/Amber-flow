@@ -14,26 +14,34 @@ export async function POST(req: Request) {
     const secret = process.env.SLACK_SIGNING_SECRET;
 
     if (!secret) {
-      console.error("Missing SLACK_SIGNING_SECRET");
-      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Bypassing SLACK_SIGNING_SECRET check in development mode");
+      } else {
+        console.error("Missing SLACK_SIGNING_SECRET");
+        return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+      }
     }
 
-    if (!slackSignature || !slackTimestamp) {
-      return NextResponse.json({ error: "Unauthorized: Missing Slack signature headers" }, { status: 401 });
+    if (secret) {
+      if (!slackSignature || !slackTimestamp) {
+        return NextResponse.json({ error: "Unauthorized: Missing Slack signature headers" }, { status: 401 });
+      }
+
+      const time = Math.floor(Date.now() / 1000);
+      if (Math.abs(time - parseInt(slackTimestamp, 10)) > 300) {
+        return NextResponse.json({ error: "Request too old" }, { status: 400 });
+      }
+
+      const sigBaseString = `v0:${slackTimestamp}:${rawBody}`;
+      const mySignature = 'v0=' + crypto.createHmac('sha256', secret).update(sigBaseString).digest('hex');
+
+      // Prevent timing attacks
+      if (mySignature.length !== slackSignature.length || !crypto.timingSafeEqual(Buffer.from(mySignature, 'utf8'), Buffer.from(slackSignature, 'utf8'))) {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
     }
 
-    const time = Math.floor(Date.now() / 1000);
-    if (Math.abs(time - parseInt(slackTimestamp, 10)) > 300) {
-      return NextResponse.json({ error: "Request too old" }, { status: 400 });
-    }
-
-    const sigBaseString = `v0:${slackTimestamp}:${rawBody}`;
-    const mySignature = 'v0=' + crypto.createHmac('sha256', secret).update(sigBaseString).digest('hex');
-
-    // Prevent timing attacks
-    if (mySignature.length !== slackSignature.length || !crypto.timingSafeEqual(Buffer.from(mySignature, 'utf8'), Buffer.from(slackSignature, 'utf8'))) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
+    // Prevent timing attacks handled above
 
     let body;
     try {
@@ -131,26 +139,75 @@ export async function POST(req: Request) {
       }
     }
 
-    // 7. Insert Student
     const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
-    const { data: student, error: studentError } = await supabase
-      .from('students')
-      .upsert(
-        {
-          prospect_id,
-          name: extracted.student_name || 'Unknown Lead',
-          partner_id: partnerId,
-          status: extracted.status || 'New',
-          notes: extracted.notes
-        },
-        { onConflict: 'prospect_id' }
-      )
-      .select('id')
+    const threadTs = body.event?.thread_ts || body.event?.ts;
+    const channelId = body.event?.channel;
+
+    // Check if this thread already exists
+    const { data: existingThread } = await supabase
+      .from('slack_threads')
+      .select('*')
+      .eq('slack_thread_ts', threadTs)
       .single();
 
-    if (studentError) {
-      console.error("Student upsert failed:", studentError);
-      return NextResponse.json({ error: "Failed to upsert student" }, { status: 500 });
+    let studentId;
+    let isFollowup = false;
+    let followupNumber = 0;
+    let slackThreadId;
+
+    if (existingThread) {
+      console.log("Existing thread found, creating follow-up.");
+      isFollowup = true;
+      followupNumber = (existingThread.followup_count || 0) + 1;
+      studentId = existingThread.student_id;
+      slackThreadId = existingThread.id;
+
+      // Update the thread count
+      await supabase
+        .from('slack_threads')
+        .update({ followup_count: followupNumber })
+        .eq('id', slackThreadId);
+    } else {
+      console.log("New thread, creating student and thread record.");
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .upsert(
+          {
+            prospect_id,
+            name: extracted.student_name || 'Unknown Lead',
+            partner_id: partnerId,
+            status: extracted.status || 'New',
+            notes: extracted.notes
+          },
+          { onConflict: 'prospect_id' }
+        )
+        .select('id')
+        .single();
+
+      if (studentError || !student) {
+        console.error("Student upsert failed:", studentError);
+        return NextResponse.json({ error: "Failed to upsert student" }, { status: 500 });
+      }
+      studentId = student.id;
+
+      // Create new thread
+      const { data: newThread, error: threadError } = await supabase
+        .from('slack_threads')
+        .insert({
+          student_id: studentId,
+          slack_channel_id: channelId,
+          slack_thread_ts: threadTs,
+          status: 'open',
+          followup_count: 0
+        })
+        .select('id')
+        .single();
+      
+      if (threadError || !newThread) {
+        console.error("Failed to create thread:", threadError);
+        return NextResponse.json({ error: "Failed to create thread" }, { status: 500 });
+      }
+      slackThreadId = newThread.id;
     }
 
     // 8. Draft Generation (using Groq)
@@ -159,7 +216,6 @@ export async function POST(req: Request) {
 
     // 9. Insert Approval Queue with raw slack context
     const teamId = body.team_id;
-    const channelId = body.event?.channel;
     const ts = body.event?.ts;
     let rawContext = text;
     if (teamId && channelId && ts) {
@@ -167,10 +223,13 @@ export async function POST(req: Request) {
     }
 
     const { error: approvalError } = await supabase.from('approvals').insert({
-      student_id: student.id,
+      student_id: studentId,
+      slack_thread_id: slackThreadId,
       raw_slack_context: rawContext,
       message: draftedMessage,
-      status: 'pending'
+      status: 'pending',
+      is_followup: isFollowup,
+      followup_number: isFollowup ? followupNumber : null
     });
     
     if (approvalError) {
@@ -179,8 +238,8 @@ export async function POST(req: Request) {
 
     // 10. Log Activity
     const { error: activityError } = await supabase.from('activities').insert({
-      student_id: student.id,
-      action: 'Lead extracted from Slack & Added to Queue',
+      student_id: studentId,
+      action: isFollowup ? \`Followup #\${followupNumber} added to queue\` : 'Lead extracted from Slack & Added to Queue',
       status: 'New'
     });
 

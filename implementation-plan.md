@@ -62,6 +62,7 @@ This document outlines the step-by-step, phased execution plan to build the Part
 **Goal:** Ensure every Slack message is securely picked up, verified, processed by the AI agent, and correctly queued in the dashboard.
 * **9.1 Live Slack Webhook Integration:** Upgrade the webhook to handle real Slack Event API payloads, verify URLs, and map tagged users securely using the Slack Signing Secret.
 * **9.2 AI Extraction & Queue Generation:** Refine the extraction prompts and ensure the drafted messages accurately populate the approval queue.
+* **9.3 Slack Thread Life Cycle:** Manage Slack conversation threads natively (ingested, pending, sent, rejected). Track follow-ups by counting repeated replies on the same thread, trigger auto-replies for Queue actions (Approved/Rejected), and display the complete chronological thread in the Student 360 view.
 
 ## Phase 10: Agent-to-WhatsApp Flow
 **Goal:** Ensure approved messages in the queue can be seamlessly dispatched to the Partner's mapped WhatsApp group, along with manual override actions.

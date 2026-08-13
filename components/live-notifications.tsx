@@ -25,6 +25,20 @@ export function LiveNotifications() {
           setNewLeadsCount((prev) => prev + 1);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'approvals',
+        },
+        (payload) => {
+          if (payload.new.is_followup) {
+            console.log('New follow-up received!', payload);
+            setNewLeadsCount((prev) => prev + 1);
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -41,7 +55,7 @@ export function LiveNotifications() {
     <button 
       onClick={handleRefresh}
       className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors"
-      title={newLeadsCount > 0 ? `${newLeadsCount} new leads. Click to refresh.` : "No new leads"}
+      title={newLeadsCount > 0 ? `${newLeadsCount} new updates. Click to refresh.` : "No new updates"}
     >
       <Bell className="w-6 h-6" />
       {newLeadsCount > 0 && (
