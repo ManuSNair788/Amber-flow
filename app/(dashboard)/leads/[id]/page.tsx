@@ -3,17 +3,18 @@ import { UserCircle2, Clock, Mail, Phone, Calendar, ArrowLeft } from 'lucide-rea
 import Link from 'next/link';
 import { ThreadActions } from '@/components/leads/thread-actions';
 
-export default async function Student360Page({ params }: { params: { id: string } }) {
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+export default async function Student360Page({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedParams.id);
   
   let query = supabase
     .from('students')
     .select('*, partners(name, whatsapp_group_id)');
     
   if (isUuid) {
-    query = query.eq('id', params.id);
+    query = query.eq('id', resolvedParams.id);
   } else {
-    query = query.eq('prospect_id', params.id);
+    query = query.eq('prospect_id', resolvedParams.id);
   }
   
   const { data: student } = await query.single();
