@@ -6,8 +6,9 @@ import { draftDnpFollowUp } from './actions';
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage({ searchParams }: { searchParams: { filter?: string } }) {
-  const filter = searchParams.filter || 'week';
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const params = await searchParams;
+  const filter = params.filter || 'week';
   
   // Basic date math for MVP
   const now = new Date();
