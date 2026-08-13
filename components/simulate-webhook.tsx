@@ -16,8 +16,11 @@ export function SimulateWebhook() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: "event_callback",
+          team_id: "T12345678",
           event: {
             type: "message",
+            channel: "C12345678",
+            ts: "1723555555.123459",
             text: "🔗 amberstudent.com/dashboard/leads/812345 maven/ counselor told him to book after cas/ <@Manu Nair> <@Rishabh>"
           }
         })

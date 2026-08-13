@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw } from 'lucide-react';
+import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
 
 function ClockIcon() {
   return (
@@ -99,9 +99,19 @@ export function QueueItem({
                 <Slack className="w-4 h-4 text-[#E01E5A]" />
                 Extracted from Slack
               </div>
+              {approval.raw_slack_context.includes('SLACK_URL:') && (
+                <a 
+                  href={approval.raw_slack_context.split('SLACK_URL:')[1].trim()} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 underline flex items-center gap-1"
+                >
+                  Go to Slack message <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
             </div>
             <div className="text-slate-700 text-sm font-medium p-2 bg-white rounded border border-slate-100 shadow-sm">
-              {approval.raw_slack_context}
+              {approval.raw_slack_context.split('SLACK_URL:')[0].trim()}
             </div>
           </div>
         )}

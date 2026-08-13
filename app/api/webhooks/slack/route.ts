@@ -158,9 +158,17 @@ export async function POST(req: Request) {
     const draftedMessage = '';
 
     // 9. Insert Approval Queue with raw slack context
+    const teamId = body.team_id;
+    const channelId = body.event?.channel;
+    const ts = body.event?.ts;
+    let rawContext = text;
+    if (teamId && channelId && ts) {
+      rawContext += `\n\nSLACK_URL:https://app.slack.com/client/${teamId}/${channelId}/p${ts.replace('.', '')}`;
+    }
+
     const { error: approvalError } = await supabase.from('approvals').insert({
       student_id: student.id,
-      raw_slack_context: text,
+      raw_slack_context: rawContext,
       message: draftedMessage,
       status: 'pending'
     });
