@@ -33,7 +33,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const { data: recentLeads } = await supabase
     .from('students')
-    .select('*, partners(name)')
+    .select('*, partners(name), approvals(status, created_at)')
     .gte('created_at', isoStart)
     .order('created_at', { ascending: false })
     .limit(5);
@@ -91,17 +91,37 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <h3 className="text-lg font-bold text-slate-800 mb-6">Recent Tagged Leads ({filter})</h3>
           
           <div className="space-y-4">
-            {recentLeads?.map((lead: any) => (
+            {recentLeads?.map((lead: any) => {
+              // Get the most recent approval status
+              const sortedApprovals = lead.approvals?.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              const latestApproval = sortedApprovals?.[0];
+              
+              let displayStatus = 'Pending';
+              let statusColor = 'bg-amber-100 text-amber-700';
+              
+              if (latestApproval?.status === 'approved') {
+                displayStatus = 'Approved';
+                statusColor = 'bg-emerald-100 text-emerald-700';
+              } else if (latestApproval?.status === 'rejected') {
+                displayStatus = 'Removed';
+                statusColor = 'bg-rose-100 text-rose-700';
+              }
+
+              const displayName = lead.name === 'Unknown Lead' && lead.prospect_id 
+                ? `Lead #${lead.prospect_id}` 
+                : lead.name;
+
+              return (
               <div key={lead.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 border border-slate-100 transition-colors">
                 <div>
-                  <p className="font-bold text-slate-900">{lead.name}</p>
+                  <p className="font-bold text-slate-900">{displayName}</p>
                   <p className="text-sm text-slate-500 flex items-center gap-2">
                     <span>{lead.partners?.name}</span> • 
                     <span className="text-xs">{new Date(lead.created_at).toLocaleDateString()}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  {lead.status === 'DNP' && (
+                  {lead.status === 'DNP' && displayStatus === 'Pending' && (
                     <form action={draftDnpFollowUp}>
                       <input type="hidden" name="studentId" value={lead.id} />
                       <input type="hidden" name="studentName" value={lead.name} />
@@ -111,12 +131,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       </button>
                     </form>
                   )}
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'DNP' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'}`}>
-                    {lead.status}
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                    {displayStatus}
                   </span>
                 </div>
               </div>
-            ))}
+            )})}
             
             {(!recentLeads || recentLeads.length === 0) && (
               <p className="text-center text-slate-500 py-8">No leads found for this time period.</p>
