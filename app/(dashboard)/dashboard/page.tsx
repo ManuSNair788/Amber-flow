@@ -65,7 +65,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Calculate Average Response Time
   const { data: metricsData } = await supabase
     .from('students')
-    .select('created_at, activities(created_at, status)')
+    .select('created_at, activities(timestamp, status)')
     .gte('created_at', isoStart)
     .lte('created_at', isoEnd);
 
@@ -75,12 +75,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   metricsData?.forEach(student => {
     // Find the first activity that indicates an action was taken
     const actionActivities = student.activities?.filter((a: any) => 
-      ['Approved', 'Message Sent', 'rejected'].includes(a.status)
-    ).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      ['Approved', 'Message Sent', 'Rejected', 'DNP Handled', 'Responded', 'Ignored'].includes(a.status)
+    ).sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     if (actionActivities && actionActivities.length > 0) {
       const firstAction = actionActivities[0];
-      const diffMs = new Date(firstAction.created_at).getTime() - new Date(student.created_at).getTime();
+      const diffMs = new Date(firstAction.timestamp).getTime() - new Date(student.created_at).getTime();
       if (diffMs > 0) {
         totalMs += diffMs;
         resolvedCount++;
