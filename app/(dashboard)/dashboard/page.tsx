@@ -38,6 +38,44 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .order('created_at', { ascending: false })
     .limit(5);
 
+  // Calculate Average Response Time
+  const { data: metricsData } = await supabase
+    .from('students')
+    .select('created_at, activities(created_at, status)')
+    .gte('created_at', isoStart);
+
+  let totalMs = 0;
+  let resolvedCount = 0;
+
+  metricsData?.forEach(student => {
+    // Find the first activity that indicates an action was taken
+    const actionActivities = student.activities?.filter((a: any) => 
+      ['Approved', 'Message Sent', 'rejected'].includes(a.status)
+    ).sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    if (actionActivities && actionActivities.length > 0) {
+      const firstAction = actionActivities[0];
+      const diffMs = new Date(firstAction.created_at).getTime() - new Date(student.created_at).getTime();
+      if (diffMs > 0) {
+        totalMs += diffMs;
+        resolvedCount++;
+      }
+    }
+  });
+
+  let avgResponseTime = '0h';
+  if (resolvedCount > 0) {
+    const avgMs = totalMs / resolvedCount;
+    const hours = avgMs / (1000 * 60 * 60);
+    if (hours < 1) {
+      avgResponseTime = `${Math.round(hours * 60)}m`;
+    } else {
+      avgResponseTime = `${hours.toFixed(1)}h`;
+    }
+  } else {
+    avgResponseTime = 'N/A';
+  }
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       
@@ -79,10 +117,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         />
         <KPICard 
           title="Avg Response" 
-          value="2.4h" 
+          value={avgResponseTime} 
           icon={Clock} 
           color="bg-emerald-50 text-emerald-600" 
-          trend="Looking good" 
+          trend={avgResponseTime === 'N/A' ? "No actions yet" : "Time to act"} 
         />
       </div>
 
