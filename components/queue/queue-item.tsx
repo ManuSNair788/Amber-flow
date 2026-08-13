@@ -94,11 +94,21 @@ export function QueueItem({
     setIsGenerating(true);
     try {
       await handleGenerateDraft(formData);
-      // The server action will revalidate the path, which updates the props natively
     } finally {
       setIsGenerating(false);
     }
   }
+
+  const wrapAction = (actionFn: (formData: FormData) => any) => async (formData: FormData) => {
+    setIsReplying(true);
+    try {
+      await actionFn(formData);
+      setIsResolved(true);
+    } catch (e: any) {
+      alert("Error: " + e.message);
+      setIsReplying(false);
+    }
+  };
 
 
 
@@ -131,7 +141,7 @@ export function QueueItem({
 
         {/* Create WA Group Action */}
         <div className="mt-6 pt-4 border-t border-slate-100">
-          <form action={handleCreateWaGroup}>
+          <form action={wrapAction(handleCreateWaGroup)}>
             <input type="hidden" name="studentId" value={approval.students?.id} />
             <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
               <Phone className="w-4 h-4" /> Create WA Group
@@ -289,26 +299,26 @@ export function QueueItem({
           </div>
         ) : (
           <>
-            <form action={handleSendToWhatsApp}>
+            <form action={wrapAction(handleSendToWhatsApp)}>
               <input type="hidden" name="approvalId" value={approval.id} />
               <input type="hidden" name="waGroupId" value={waGroupId} />
-              <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+              <button type="submit" disabled={isReplying} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50">
                 <Phone className="w-4 h-4" /> Send to WA
               </button>
             </form>
 
-            <form action={handleApproveOnly}>
+            <form action={wrapAction(handleApproveOnly)}>
               <input type="hidden" name="approvalId" value={approval.id} />
-              <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+              <button type="submit" disabled={isReplying} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50">
                 <Check className="w-4 h-4" /> Approve (Manual)
               </button>
             </form>
 
             {approval.students?.status === 'DNP' && (
-              <form action={handleDnpQuickAction}>
+              <form action={wrapAction(handleDnpQuickAction)}>
                 <input type="hidden" name="approvalId" value={approval.id} />
                 <input type="hidden" name="waGroupId" value={waGroupId} />
-                <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                <button type="submit" disabled={isReplying} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50">
                   <MessageSquareWarning className="w-4 h-4" /> DNP Quick Action
                 </button>
               </form>
@@ -323,7 +333,7 @@ export function QueueItem({
                 <X className="w-4 h-4" /> Reject
               </button>
             ) : (
-              <form action={handleReject} className="flex flex-col gap-2 bg-rose-50 p-3 rounded-lg border border-rose-100">
+              <form action={wrapAction(handleReject)} className="flex flex-col gap-2 bg-rose-50 p-3 rounded-lg border border-rose-100">
                 <input type="hidden" name="approvalId" value={approval.id} />
                 <input 
                   type="text" 
@@ -347,7 +357,8 @@ export function QueueItem({
                   </button>
                   <button 
                     type="submit" 
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded"
+                    disabled={isReplying}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded disabled:opacity-50"
                   >
                     <X className="w-3 h-3" /> Confirm
                   </button>
