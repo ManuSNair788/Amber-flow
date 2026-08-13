@@ -277,9 +277,13 @@ export async function handleReplyToSlackThread(formData: FormData) {
   if (approval) {
     const slackThread = approval.slack_threads as any;
     
-    if (slackThread?.slack_thread_ts && process.env.SLACK_BOT_TOKEN) {
+    if (slackThread?.slack_thread_ts) {
+      if (!process.env.SLACK_BOT_TOKEN) {
+        return { success: false, error: "SLACK_BOT_TOKEN environment variable is missing. Cannot post to Slack." };
+      }
+      
       try {
-        await fetch('https://slack.com/api/chat.postMessage', {
+        const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
@@ -291,8 +295,15 @@ export async function handleReplyToSlackThread(formData: FormData) {
             text: replyMessage
           })
         });
-      } catch (err) {
+        
+        const data = await slackRes.json();
+        if (!data.ok) {
+           console.error('Slack API error:', data.error);
+           return { success: false, error: `Slack API error: ${data.error}` };
+        }
+      } catch (err: any) {
         console.error('Failed to send Slack reply:', err);
+        return { success: false, error: err.message };
       }
     }
 
@@ -307,4 +318,5 @@ export async function handleReplyToSlackThread(formData: FormData) {
   }
 
   revalidatePath('/queue');
+  return { success: true };
 }

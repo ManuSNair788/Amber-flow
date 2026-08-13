@@ -50,7 +50,12 @@ export function QueueItem({
     if (!handleReplyToSlackThread) return;
     setIsReplying(true);
     try {
-      await handleReplyToSlackThread(formData);
+      const result = await handleReplyToSlackThread(formData);
+      if (result && !result.success) {
+        alert(result.error || "Failed to send response to Slack.");
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
     } finally {
       setIsReplying(false);
     }
