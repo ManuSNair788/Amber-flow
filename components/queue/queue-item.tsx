@@ -19,7 +19,8 @@ export function QueueItem({
   handleDnpQuickAction,
   handleEditMessage,
   handleGenerateDraft,
-  handleReplyToSlackThread
+  handleReplyToSlackThread,
+  handleIgnoreFollowup
 }: { 
   approval: any, 
   waGroupId: string,
