@@ -40,6 +40,7 @@ export function QueueItem({
   const [rejectReason, setRejectReason] = useState("");
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
   
   const partner = approval.students?.partners;
   const threadHistory = approval.is_followup && approval.slack_threads?.approvals 
@@ -53,6 +54,8 @@ export function QueueItem({
       const result = await handleReplyToSlackThread(formData);
       if (result && !result.success) {
         alert(result.error || "Failed to send response to Slack.");
+      } else {
+        setIsResolved(true);
       }
     } catch (e: any) {
       alert("Error: " + e.message);
@@ -79,6 +82,8 @@ export function QueueItem({
   }
 
 
+
+  if (isResolved) return null;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
