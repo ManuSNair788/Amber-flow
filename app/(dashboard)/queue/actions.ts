@@ -106,9 +106,10 @@ export async function handleSendToWhatsApp(formData: FormData) {
       console.error('Failed to connect to WhatsApp bot:', e);
     }
 
-    if (approval.slack_threads?.slack_thread_ts) {
+    const slackThread = approval.slack_threads as any;
+    if (slackThread?.slack_thread_ts) {
       const replyText = `✅ Approved! Message forwarded to partner WhatsApp group.`;
-      console.log(`[SLACK AUTO-REPLY] Thread ${approval.slack_threads.slack_thread_ts}: ${replyText}`);
+      console.log(`[SLACK AUTO-REPLY] Thread ${slackThread.slack_thread_ts}: ${replyText}`);
       
       if (process.env.SLACK_BOT_TOKEN) {
         try {
@@ -119,8 +120,8 @@ export async function handleSendToWhatsApp(formData: FormData) {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              channel: approval.slack_threads.slack_channel_id,
-              thread_ts: approval.slack_threads.slack_thread_ts,
+              channel: slackThread.slack_channel_id,
+              thread_ts: slackThread.slack_thread_ts,
               text: replyText
             })
           });
@@ -153,9 +154,10 @@ export async function handleReject(formData: FormData) {
     .single();
 
   if (approval) {
-    if (approval.slack_threads?.slack_thread_ts) {
+    const slackThread = approval.slack_threads as any;
+    if (slackThread?.slack_thread_ts) {
       const replyText = `❌ Message Rejected.\n*Reason:* ${reason}`;
-      console.log(`[SLACK AUTO-REPLY] Thread ${approval.slack_threads.slack_thread_ts}: ${replyText}`);
+      console.log(`[SLACK AUTO-REPLY] Thread ${slackThread.slack_thread_ts}: ${replyText}`);
       
       if (process.env.SLACK_BOT_TOKEN) {
         try {
@@ -166,8 +168,8 @@ export async function handleReject(formData: FormData) {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              channel: approval.slack_threads.slack_channel_id,
-              thread_ts: approval.slack_threads.slack_thread_ts,
+              channel: slackThread.slack_channel_id,
+              thread_ts: slackThread.slack_thread_ts,
               text: replyText
             })
           });

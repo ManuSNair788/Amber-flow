@@ -247,7 +247,7 @@ export async function POST(req: Request) {
       console.error("Activity insert failed:", activityError);
     }
 
-    return NextResponse.json({ success: true, student, draftedMessage, approvalError, activityError });
+    return NextResponse.json({ success: true, studentId, draftedMessage, approvalError, activityError });
 
   } catch (error: any) {
     console.error("Webhook unexpected error:", error);
