@@ -4,28 +4,43 @@ import Link from 'next/link';
 import { ThreadActions } from '@/components/leads/thread-actions';
 
 export default async function Student360Page({ params }: { params: { id: string } }) {
-  const { data: student } = await supabase
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+  
+  let query = supabase
     .from('students')
-    .select('*, partners(name, whatsapp_group_id)')
-    .eq('id', params.id)
-    .single();
+    .select('*, partners(name, whatsapp_group_id)');
+    
+  if (isUuid) {
+    query = query.eq('id', params.id);
+  } else {
+    query = query.eq('prospect_id', params.id);
+  }
+  
+  const { data: student } = await query.single();
 
-  const { data: activities } = await supabase
-    .from('activities')
-    .select('*')
-    .eq('student_id', params.id)
-    .order('timestamp', { ascending: false });
+  let activities = null;
+  let threads = null;
 
-  const { data: threads } = await supabase
-    .from('slack_threads')
-    .select(`
-      id, slack_channel_id, slack_thread_ts, status, followup_count, created_at,
-      approvals (
-        id, raw_slack_context, message, status, rejection_reason, is_followup, followup_number, created_at
-      )
-    `)
-    .eq('student_id', params.id)
-    .order('created_at', { ascending: false });
+  if (student) {
+    const { data: a } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('student_id', student.id)
+      .order('timestamp', { ascending: false });
+    activities = a;
+
+    const { data: t } = await supabase
+      .from('slack_threads')
+      .select(`
+        id, slack_channel_id, slack_thread_ts, status, followup_count, created_at,
+        approvals (
+          id, raw_slack_context, message, status, rejection_reason, is_followup, followup_number, created_at
+        )
+      `)
+      .eq('student_id', student.id)
+      .order('created_at', { ascending: false });
+    threads = t;
+  }
 
   if (!student) {
     return <div>Student not found.</div>;
