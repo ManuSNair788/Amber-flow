@@ -148,9 +148,9 @@ export async function POST(req: Request) {
     }
 
     // 8. Draft Generation (using Groq)
-    const taggedUsersStr = extracted.tagged_users && extracted.tagged_users.length > 0 
+    const taggedUsersStr = Array.isArray(extracted.tagged_users) && extracted.tagged_users.length > 0 
       ? `\nTagged Slack Users: ${extracted.tagged_users.join(', ')}. Include their names or mentions if relevant.` 
-      : '';
+      : (typeof extracted.tagged_users === 'string' ? `\nTagged Slack Users: ${extracted.tagged_users}. Include their names or mentions if relevant.` : '');
 
     const draftPrompt = `
       Write a short, professional WhatsApp follow-up message to the partner regarding this lead based on the notes. Do not include subject lines or formal email signatures.${taggedUsersStr}
