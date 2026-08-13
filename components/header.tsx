@@ -2,6 +2,7 @@
 
 import { Calendar, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { LiveNotifications } from './live-notifications';
 
 export function Header() {
   const [dateStr, setDateStr] = useState('');
@@ -32,10 +33,7 @@ export function Header() {
           <span suppressHydrationWarning>{dateStr || 'Loading...'}</span>
         </div>
         
-        <button className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-1 right-1 w-4 h-4 bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-[#F8FAFC]">3</span>
-        </button>
+        <LiveNotifications />
 
         <div className="flex items-center gap-3 cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200">
