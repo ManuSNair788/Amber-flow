@@ -30,7 +30,7 @@ export function QueueItem({
   handleDnpQuickAction: (formData: FormData) => void,
   handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>,
   handleGenerateDraft: (formData: FormData) => Promise<void>,
-  handleReplyToSlackThread?: (formData: FormData) => void
+  handleReplyToSlackThread?: (formData: FormData) => Promise<{ success: boolean, error?: string } | void>
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(approval.message);
