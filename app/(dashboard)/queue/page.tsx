@@ -1,14 +1,23 @@
 import { supabase } from '@/lib/supabase';
 import { Check } from 'lucide-react';
 import { QueueItem } from '@/components/queue/queue-item';
-import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage, handleGenerateDraft } from './actions';
+import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage, handleGenerateDraft, handleReplyToSlackThread } from './actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function QueuePage() {
   const { data: approvals } = await supabase
     .from('approvals')
-    .select('*, students(*, partners(*))')
+    .select(`
+      *, 
+      students(*, partners(*)),
+      slack_threads (
+        id, slack_channel_id, slack_thread_ts,
+        approvals (
+          id, raw_slack_context, message, status, is_followup, followup_number, created_at, approved_by
+        )
+      )
+    `)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
@@ -36,6 +45,7 @@ export default async function QueuePage() {
               handleDnpQuickAction={handleDnpQuickAction}
               handleEditMessage={handleEditMessage}
               handleGenerateDraft={handleGenerateDraft}
+              handleReplyToSlackThread={handleReplyToSlackThread}
             />
           );
 

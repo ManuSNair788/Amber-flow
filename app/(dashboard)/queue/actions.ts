@@ -261,3 +261,50 @@ export async function handleEditMessage(approvalId: string, newMessage: string) 
   revalidatePath('/queue');
   return { success: true };
 }
+
+export async function handleReplyToSlackThread(formData: FormData) {
+  const approvalId = formData.get('approvalId') as string;
+  const replyMessage = formData.get('replyMessage') as string;
+  
+  if (!approvalId || !replyMessage) return;
+
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('student_id, slack_threads(slack_channel_id, slack_thread_ts)')
+    .eq('id', approvalId)
+    .single();
+
+  if (approval) {
+    const slackThread = approval.slack_threads as any;
+    
+    if (slackThread?.slack_thread_ts && process.env.SLACK_BOT_TOKEN) {
+      try {
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            channel: slackThread.slack_channel_id,
+            thread_ts: slackThread.slack_thread_ts,
+            text: replyMessage
+          })
+        });
+      } catch (err) {
+        console.error('Failed to send Slack reply:', err);
+      }
+    }
+
+    // Mark as approved (resolved)
+    await supabase.from('approvals').update({ status: 'approved' }).eq('id', approvalId);
+    
+    await supabase.from('activities').insert({
+      student_id: approval.student_id,
+      action: `Sent response to Slack thread`,
+      status: 'Responded'
+    });
+  }
+
+  revalidatePath('/queue');
+}

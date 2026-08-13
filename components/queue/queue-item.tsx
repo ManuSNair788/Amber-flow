@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
+import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink, Send } from 'lucide-react';
 
 function ClockIcon() {
   return (
@@ -18,7 +18,8 @@ export function QueueItem({
   handleCreateWaGroup,
   handleDnpQuickAction,
   handleEditMessage,
-  handleGenerateDraft
+  handleGenerateDraft,
+  handleReplyToSlackThread
 }: { 
   approval: any, 
   waGroupId: string,
@@ -28,7 +29,8 @@ export function QueueItem({
   handleCreateWaGroup: (formData: FormData) => void,
   handleDnpQuickAction: (formData: FormData) => void,
   handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>,
-  handleGenerateDraft: (formData: FormData) => Promise<void>
+  handleGenerateDraft: (formData: FormData) => Promise<void>,
+  handleReplyToSlackThread?: (formData: FormData) => void
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(approval.message);
@@ -36,8 +38,23 @@ export function QueueItem({
   const [isGenerating, setIsGenerating] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [replyText, setReplyText] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
   
   const partner = approval.students?.partners;
+  const threadHistory = approval.is_followup && approval.slack_threads?.approvals 
+    ? [...approval.slack_threads.approvals].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    : [];
+
+  const onReply = async (formData: FormData) => {
+    if (!handleReplyToSlackThread) return;
+    setIsReplying(true);
+    try {
+      await handleReplyToSlackThread(formData);
+    } finally {
+      setIsReplying(false);
+    }
+  };
 
   const onSaveEdit = async () => {
     setIsSaving(true);
@@ -99,11 +116,11 @@ export function QueueItem({
         
         {/* Raw Slack Context */}
         {approval.raw_slack_context && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col max-h-[300px]">
+            <div className="flex items-center justify-between mb-3 shrink-0">
                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                 <Slack className="w-4 h-4 text-[#E01E5A]" />
-                Extracted from Slack
+                {approval.is_followup ? "Thread History" : "Extracted from Slack"}
               </div>
               {approval.raw_slack_context.includes('SLACK_URL:') && (
                 <a 
@@ -116,8 +133,28 @@ export function QueueItem({
                 </a>
               )}
             </div>
-            <div className="text-slate-700 text-sm font-medium p-2 bg-white rounded border border-slate-100 shadow-sm">
-              {approval.raw_slack_context.split('SLACK_URL:')[0].trim()}
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+              {approval.is_followup && threadHistory.length > 0 ? (
+                threadHistory.map((item: any) => (
+                  <div key={item.id} className={`p-3 rounded-lg border text-sm ${item.id === approval.id ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-white border-slate-200'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold text-slate-500">
+                        {item.is_followup ? `Follow-up #${item.followup_number}` : 'Initial Message'}
+                        {item.id === approval.id && <span className="ml-2 text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">CURRENT</span>}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="text-slate-700 font-medium whitespace-pre-wrap">
+                      {item.raw_slack_context?.split('SLACK_URL:')[0].trim()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-700 text-sm font-medium p-3 bg-white rounded border border-slate-100 shadow-sm whitespace-pre-wrap">
+                  {approval.raw_slack_context.split('SLACK_URL:')[0].trim()}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -187,12 +224,27 @@ export function QueueItem({
       {/* Actions */}
       <div className="flex flex-row lg:flex-col gap-3 justify-center">
         {approval.is_followup ? (
-          <a 
-            href={`/leads/${approval.student_id}`}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
-          >
-            <ExternalLink className="w-4 h-4" /> Respond in Thread
-          </a>
+          <div className="flex flex-col gap-2 w-full">
+            <form action={onReply} className="flex flex-col gap-2">
+              <input type="hidden" name="approvalId" value={approval.id} />
+              <textarea 
+                name="replyMessage"
+                placeholder="Type your response here..."
+                required
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="w-full text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-slate-800 resize-none min-h-[100px]"
+              />
+              <button 
+                type="submit" 
+                disabled={isReplying || !replyText.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isReplying ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isReplying ? 'Sending...' : 'Send Response'}
+              </button>
+            </form>
+          </div>
         ) : (
           <>
             <form action={handleSendToWhatsApp}>
