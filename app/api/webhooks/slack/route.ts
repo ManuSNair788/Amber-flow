@@ -239,7 +239,7 @@ export async function POST(req: Request) {
     // 10. Log Activity
     const { error: activityError } = await supabase.from('activities').insert({
       student_id: studentId,
-      action: isFollowup ? \`Followup #\${followupNumber} added to queue\` : 'Lead extracted from Slack & Added to Queue',
+      action: isFollowup ? `Followup #${followupNumber} added to queue` : 'Lead extracted from Slack & Added to Queue',
       status: 'New'
     });
 

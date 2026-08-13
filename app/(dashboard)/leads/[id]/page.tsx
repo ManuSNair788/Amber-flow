@@ -193,5 +193,6 @@ export default async function Student360Page({ params }: { params: { id: string 
         </div>
       </div>
     </div>
+    </div>
   );
 }
