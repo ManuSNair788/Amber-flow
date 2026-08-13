@@ -31,12 +31,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending'); // Usually approvals are current state, not just time-filtered, but could be filtered
 
-  const { data: recentLeads } = await supabase
-    .from('students')
-    .select('*, partners(name), approvals(status, created_at)')
-    .gte('created_at', isoStart)
+  const { data: pendingItems } = await supabase
+    .from('approvals')
+    .select('id, is_followup, followup_number, created_at, students(name, prospect_id, partners(name))')
+    .eq('status', 'pending')
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(8);
+
+  const { data: recentCompletedActivities } = await supabase
+    .from('activities')
+    .select('id, action, status, timestamp, students(name, prospect_id, partners(name))')
+    .in('status', ['Approved', 'Message Sent', 'Rejected', 'DNP Handled', 'Responded', 'Ignored'])
+    .order('timestamp', { ascending: false })
+    .limit(8);
 
   // Calculate Average Response Time
   const { data: metricsData } = await supabase
@@ -125,59 +132,71 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Recent Tagged Leads ({filter})</h3>
-          
-          <div className="space-y-4">
-            {recentLeads?.map((lead: any) => {
-              // Get the most recent approval status
-              const sortedApprovals = lead.approvals?.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-              const latestApproval = sortedApprovals?.[0];
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+          <h3 className="text-lg font-bold text-slate-800 mb-6">Pending Actions</h3>
+          <div className="space-y-4 flex-1">
+            {pendingItems?.map((item: any) => {
+              const student = item.students || {};
+              const partner = student.partners || {};
+              const displayName = student.name === 'Unknown Lead' && student.prospect_id 
+                ? `Lead #${student.prospect_id}` 
+                : student.name;
               
-              let displayStatus = 'Pending';
-              let statusColor = 'bg-amber-100 text-amber-700';
-              
-              if (latestApproval?.status === 'approved') {
-                displayStatus = 'Approved';
-                statusColor = 'bg-emerald-100 text-emerald-700';
-              } else if (latestApproval?.status === 'rejected') {
-                displayStatus = 'Removed';
-                statusColor = 'bg-rose-100 text-rose-700';
-              }
-
-              const displayName = lead.name === 'Unknown Lead' && lead.prospect_id 
-                ? `Lead #${lead.prospect_id}` 
-                : lead.name;
+              const pendingLabel = item.is_followup 
+                ? `Follow-up #${item.followup_number} pending`
+                : `Initial Lead pending`;
 
               return (
-              <div key={lead.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 border border-slate-100 transition-colors">
-                <div>
-                  <p className="font-bold text-slate-900">{displayName}</p>
-                  <p className="text-sm text-slate-500 flex items-center gap-2">
-                    <span>{lead.partners?.name}</span> • 
-                    <span className="text-xs">{new Date(lead.created_at).toLocaleDateString()}</span>
-                  </p>
+                <div key={item.id} className="flex flex-col justify-center p-4 rounded-xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 transition-colors">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-bold text-slate-900 truncate">{displayName}</p>
+                    <span className="shrink-0 text-xs text-slate-400">{new Date(item.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-2">{partner.name || 'Unknown Partner'}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[11px] font-bold rounded-md">
+                      {pendingLabel}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  {lead.status === 'DNP' && displayStatus === 'Pending' && (
-                    <form action={draftDnpFollowUp}>
-                      <input type="hidden" name="studentId" value={lead.id} />
-                      <input type="hidden" name="studentName" value={lead.name} />
-                      <input type="hidden" name="partnerName" value={lead.partners?.name} />
-                      <button type="submit" className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-md transition-colors border border-rose-200">
-                        Draft DNP Follow-up
-                      </button>
-                    </form>
-                  )}
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
-                    {displayStatus}
-                  </span>
+              );
+            })}
+            {(!pendingItems || pendingItems.length === 0) && (
+              <p className="text-center text-slate-500 py-8 text-sm">No pending actions!</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+          <h3 className="text-lg font-bold text-slate-800 mb-6">Recently Completed</h3>
+          <div className="space-y-4 flex-1">
+            {recentCompletedActivities?.map((act: any) => {
+              const student = act.students || {};
+              const partner = student.partners || {};
+              const displayName = student.name === 'Unknown Lead' && student.prospect_id 
+                ? `Lead #${student.prospect_id}` 
+                : student.name;
+
+              return (
+                <div key={act.id} className="flex flex-col justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-bold text-slate-900 truncate">{displayName}</p>
+                    <span className="shrink-0 text-xs text-slate-400">{new Date(act.timestamp).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-2">{partner.name || 'Unknown Partner'}</p>
+                  <div className="flex items-start gap-2">
+                    <div className="shrink-0 mt-0.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 leading-snug">
+                      {act.action}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )})}
-            
-            {(!recentLeads || recentLeads.length === 0) && (
-              <p className="text-center text-slate-500 py-8">No leads found for this time period.</p>
+              );
+            })}
+            {(!recentCompletedActivities || recentCompletedActivities.length === 0) && (
+              <p className="text-center text-slate-500 py-8 text-sm">No recent activity found.</p>
             )}
           </div>
         </div>
