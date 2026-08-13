@@ -135,23 +135,22 @@ export async function POST(req: Request) {
     const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
     const { data: student, error: studentError } = await supabase
       .from('students')
-      .insert({
-        prospect_id,
-        name: extracted.student_name || 'Unknown Lead',
-        partner_id: partnerId,
-        status: extracted.status || 'New',
-        notes: extracted.notes
-      })
+      .upsert(
+        {
+          prospect_id,
+          name: extracted.student_name || 'Unknown Lead',
+          partner_id: partnerId,
+          status: extracted.status || 'New',
+          notes: extracted.notes
+        },
+        { onConflict: 'prospect_id' }
+      )
       .select('id')
       .single();
 
     if (studentError) {
-      console.error("Student insert failed:", studentError);
-      if (studentError.code === '23505') {
-        // Duplicate key (lead already exists). Return 200 to keep Slack happy.
-        return NextResponse.json({ status: 'ignored_duplicate' });
-      }
-      return NextResponse.json({ error: "Failed to insert student" }, { status: 500 });
+      console.error("Student upsert failed:", studentError);
+      return NextResponse.json({ error: "Failed to upsert student" }, { status: 500 });
     }
 
     // 8. Draft Generation (using Groq)

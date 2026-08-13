@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import { Check, X, Edit3, MessageSquareWarning, Slack, Phone } from 'lucide-react';
-import { handleApprove, handleReject, handleCreateWaGroup, handleDnpQuickAction } from './actions';
+import { Check } from 'lucide-react';
+import { QueueItem } from '@/components/queue/queue-item';
+import { handleApprove, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,103 +25,19 @@ export default async function QueuePage() {
           const waGroupId = partner?.whatsapp_group_id || '';
           
           return (
-          <div key={approval.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
-            {/* Student Info */}
-            <div className="lg:w-1/4 border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
-                  {approval.students?.name?.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">{approval.students?.name}</h3>
-                  <p className="text-xs text-slate-500">{approval.students?.prospect_id}</p>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm text-slate-600">
-                <p><span className="font-medium text-slate-900">Partner:</span> {partner?.name}</p>
-                <p><span className="font-medium text-slate-900">Status:</span> {approval.students?.status}</p>
-                
-                {/* Follow up Metric requested by user */}
-                <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-semibold mt-2 border border-amber-200">
-                  <ClockIcon /> Follow-up #2
-                </div>
-              </div>
+            <QueueItem 
+              key={approval.id} 
+              approval={approval} 
+              waGroupId={waGroupId}
+              handleApprove={handleApprove}
+              handleReject={handleReject}
+              handleCreateWaGroup={handleCreateWaGroup}
+              handleDnpQuickAction={handleDnpQuickAction}
+              handleEditMessage={handleEditMessage}
+            />
+          );
 
-              {/* Create WA Group Action */}
-              <div className="mt-6 pt-4 border-t border-slate-100">
-                <form action={handleCreateWaGroup}>
-                  <input type="hidden" name="studentId" value={approval.students?.id} />
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
-                    <Phone className="w-4 h-4" /> Create WA Group
-                  </button>
-                </form>
-              </div>
-            </div>
-
-            {/* Message Content */}
-            <div className="flex-1 flex flex-col gap-4">
-              
-              {/* Raw Slack Context */}
-              {approval.raw_slack_context && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                     <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                      <Slack className="w-4 h-4 text-[#E01E5A]" />
-                      Extracted from Slack
-                    </div>
-                  </div>
-                  <div className="text-slate-700 text-sm font-medium p-2 bg-white rounded border border-slate-100 shadow-sm">
-                    {approval.raw_slack_context}
-                  </div>
-                </div>
-              )}
-
-              {/* AI Draft */}
-              <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                   <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
-                    <MessageSquareWarning className="w-4 h-4" />
-                    AI Generated WhatsApp Draft
-                  </div>
-                </div>
-                <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">
-                  {approval.message}
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-row lg:flex-col gap-3 justify-center">
-              <form action={handleApprove}>
-                <input type="hidden" name="approvalId" value={approval.id} />
-                <input type="hidden" name="waGroupId" value={waGroupId} />
-                <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                  <Phone className="w-4 h-4" /> Approve & Send to WA
-                </button>
-              </form>
-
-              {approval.students?.status === 'DNP' && (
-                <form action={handleDnpQuickAction}>
-                  <input type="hidden" name="approvalId" value={approval.id} />
-                  <input type="hidden" name="waGroupId" value={waGroupId} />
-                  <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-                    <MessageSquareWarning className="w-4 h-4" /> DNP Quick Action
-                  </button>
-                </form>
-              )}
-
-              <form action={handleReject}>
-                <input type="hidden" name="approvalId" value={approval.id} />
-                <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors">
-                  <X className="w-4 h-4" /> Reject
-                </button>
-              </form>
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-medium rounded-lg transition-colors">
-                <Edit3 className="w-4 h-4" /> Edit
-              </button>
-            </div>
-          </div>
-        )})}
+        })}
         
         {(!approvals || approvals.length === 0) && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center">
@@ -132,10 +49,4 @@ export default async function QueuePage() {
       </div>
     </div>
   );
-}
-
-function ClockIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-  )
 }

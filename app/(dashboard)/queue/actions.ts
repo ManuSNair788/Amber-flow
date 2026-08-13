@@ -126,3 +126,19 @@ export async function handleDnpQuickAction(formData: FormData) {
 
   revalidatePath('/queue');
 }
+
+export async function handleEditMessage(approvalId: string, newMessage: string) {
+  if (!approvalId || !newMessage) return { success: false, error: 'Missing parameters' };
+
+  const { error } = await supabase
+    .from('approvals')
+    .update({ message: newMessage })
+    .eq('id', approvalId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/queue');
+  return { success: true };
+}
