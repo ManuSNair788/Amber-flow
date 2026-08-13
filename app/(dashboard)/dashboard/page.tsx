@@ -3,28 +3,41 @@ import { Users, ListChecks, CheckCircle, Clock, ArrowRight, ExternalLink } from 
 import Link from 'next/link';
 import { SimulateWebhook } from '@/components/simulate-webhook';
 import { draftDnpFollowUp } from './actions';
+import { DateRangePicker } from '@/components/date-range-picker';
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ filter?: string, start?: string, end?: string }> }) {
   const params = await searchParams;
-  const filter = params.filter || 'week';
+  const filter = params.filter || 'today';
+  const startParam = params.start;
+  const endParam = params.end;
   
-  // Basic date math for MVP
+  // Date math
   const now = new Date();
   let startDate = new Date();
-  if (filter === 'today') startDate.setHours(0,0,0,0);
-  if (filter === 'week') startDate.setDate(now.getDate() - 7);
-  if (filter === 'month') startDate.setMonth(now.getMonth() - 1);
-  if (filter === 'year') startDate.setFullYear(now.getFullYear() - 1);
+  let endDate = new Date();
+
+  if (startParam && endParam) {
+    startDate = new Date(startParam);
+    endDate = new Date(endParam);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    if (filter === 'today') startDate.setHours(0,0,0,0);
+    if (filter === 'week') startDate.setDate(now.getDate() - 7);
+    if (filter === 'month') startDate.setMonth(now.getMonth() - 1);
+    if (filter === 'year') startDate.setFullYear(now.getFullYear() - 1);
+  }
 
   const isoStart = startDate.toISOString();
+  const isoEnd = endDate.toISOString();
 
   // Fetch data filtered by time
   const { count: taggedLeads } = await supabase
     .from('students')
     .select('*', { count: 'exact', head: true })
-    .gte('created_at', isoStart);
+    .gte('created_at', isoStart)
+    .lte('created_at', isoEnd);
     
   const { count: pendingApprovals } = await supabase
     .from('approvals')
@@ -35,6 +48,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .from('approvals')
     .select('id, is_followup, followup_number, created_at, students(name, prospect_id, partners(name))')
     .eq('status', 'pending')
+    .gte('created_at', isoStart)
+    .lte('created_at', isoEnd)
     .order('created_at', { ascending: false })
     .limit(8);
 
@@ -42,6 +57,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .from('activities')
     .select('id, action, status, timestamp, students(name, prospect_id, partners(name), approvals(raw_slack_context))')
     .in('status', ['Approved', 'Message Sent', 'Rejected', 'DNP Handled', 'Responded', 'Ignored'])
+    .gte('timestamp', isoStart)
+    .lte('timestamp', isoEnd)
     .order('timestamp', { ascending: false })
     .limit(8);
 
@@ -49,7 +66,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const { data: metricsData } = await supabase
     .from('students')
     .select('created_at, activities(created_at, status)')
-    .gte('created_at', isoStart);
+    .gte('created_at', isoStart)
+    .lte('created_at', isoEnd);
 
   let totalMs = 0;
   let resolvedCount = 0;
@@ -93,16 +111,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <p className="text-slate-500 mt-1">Overview of leads you've been tagged in.</p>
         </div>
         
-        <div className="flex bg-white rounded-lg p-1 shadow-sm border border-slate-200">
-          {['today', 'week', 'month', 'year'].map((f) => (
-            <Link 
-              key={f} 
-              href={`/dashboard?filter=${f}`}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${filter === f ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
-            >
-              {f}
-            </Link>
-          ))}
+        <div>
+          <DateRangePicker />
         </div>
       </div>
 
@@ -113,7 +123,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           value={taggedLeads || 0} 
           icon={Users} 
           color="bg-indigo-50 text-indigo-600" 
-          trend={`In the last ${filter}`} 
+          trend={startParam ? "Selected custom range" : `In the last ${filter}`} 
         />
         <KPICard 
           title="Pending Actions" 
