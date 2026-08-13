@@ -86,64 +86,10 @@ export async function POST(req: Request) {
     //    return NextResponse.json({ status: 'ignored_not_tagged' });
     // }
 
-    // 6. AI Extraction (using Groq)
-    const extractionPrompt = `
-      Extract the following information from the message below and output ONLY valid JSON.
-      Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
-      If you can't find a value, use null.
-      Message: "${text}"
-    `;
-
-    console.log("Sending to Groq AI...");
-    const extractCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: "You are a JSON-only data extraction bot." },
-        { role: "user", content: extractionPrompt }
-      ],
-      model: "llama-3.1-8b-instant",
-      response_format: { type: "json_object" }
-    });
-
-    const extractedStr = extractCompletion.choices[0]?.message?.content || '{}';
-    console.log("AI Extraction Result:", extractedStr);
-    
-    let extracted;
-    try {
-      extracted = JSON.parse(extractedStr);
-    } catch(e) {
-      console.error("AI Output parsing failed:", extractedStr);
-      return NextResponse.json({ error: "Failed to parse AI output" }, { status: 500 });
-    }
-
-    // 6. Smart Filter: Ignore random conversational messages
-    if (!extracted.partner_name || extracted.partner_name === 'null') {
-      console.log("Ignored by Smart Filter: Message does not contain a partner name.");
-      return NextResponse.json({ status: 'ignored_not_a_lead' });
-    }
-
-    console.log("Smart Filter Passed. Resolving Partner ID...");
-    // 7. Resolve Partner ID
-    let partnerId = null;
-    if (extracted.partner_name) {
-      const { data: partnerData } = await supabase
-        .from('partners')
-        .select('id')
-        .ilike('name', `%${extracted.partner_name}%`)
-        .single();
-      
-      if (partnerData) {
-        partnerId = partnerData.id;
-      } else {
-         const { data: newPartner } = await supabase.from('partners').insert({ name: extracted.partner_name }).select('id').single();
-         if (newPartner) partnerId = newPartner.id;
-      }
-    }
-
-    const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
     const threadTs = body.event?.thread_ts || body.event?.ts;
     const channelId = body.event?.channel;
 
-    // Check if this thread already exists
+    // Check if this thread already exists (Follow-up Check)
     const { data: existingThread } = await supabase
       .from('slack_threads')
       .select('*')
@@ -154,7 +100,7 @@ export async function POST(req: Request) {
     let isFollowup = false;
     let followupNumber = 0;
     let slackThreadId;
-
+    
     if (existingThread) {
       console.log("Existing thread found, creating follow-up.");
       isFollowup = true;
@@ -168,6 +114,62 @@ export async function POST(req: Request) {
         .update({ followup_count: followupNumber })
         .eq('id', slackThreadId);
     } else {
+      console.log("New thread, running AI extraction...");
+      
+      // AI Extraction (using Groq)
+      const extractionPrompt = `
+        Extract the following information from the message below and output ONLY valid JSON.
+        Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
+        If you can't find a value, use null.
+        Message: "${text}"
+      `;
+
+      console.log("Sending to Groq AI...");
+      const extractCompletion = await groq.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a JSON-only data extraction bot." },
+          { role: "user", content: extractionPrompt }
+        ],
+        model: "llama-3.1-8b-instant",
+        response_format: { type: "json_object" }
+      });
+
+      const extractedStr = extractCompletion.choices[0]?.message?.content || '{}';
+      console.log("AI Extraction Result:", extractedStr);
+      
+      let extracted;
+      try {
+        extracted = JSON.parse(extractedStr);
+      } catch(e) {
+        console.error("AI Output parsing failed:", extractedStr);
+        return NextResponse.json({ error: "Failed to parse AI output" }, { status: 500 });
+      }
+
+      // Smart Filter: Ignore random conversational messages
+      if (!extracted.partner_name || extracted.partner_name === 'null') {
+        console.log("Ignored by Smart Filter: Message does not contain a partner name.");
+        return NextResponse.json({ status: 'ignored_not_a_lead' });
+      }
+
+      console.log("Smart Filter Passed. Resolving Partner ID...");
+      let partnerId = null;
+      if (extracted.partner_name) {
+        const { data: partnerData } = await supabase
+          .from('partners')
+          .select('id')
+          .ilike('name', `%${extracted.partner_name}%`)
+          .single();
+        
+        if (partnerData) {
+          partnerId = partnerData.id;
+        } else {
+           const { data: newPartner } = await supabase.from('partners').insert({ name: extracted.partner_name }).select('id').single();
+           if (newPartner) partnerId = newPartner.id;
+        }
+      }
+
+      const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
+
       console.log("New thread, creating student and thread record.");
       const { data: student, error: studentError } = await supabase
         .from('students')
