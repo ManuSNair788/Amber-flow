@@ -154,30 +154,8 @@ export async function POST(req: Request) {
     }
 
     // 8. Draft Generation (using Groq)
-    const taggedUsersStr = Array.isArray(extracted.tagged_users) && extracted.tagged_users.length > 0 
-      ? `\nTagged Slack Users: ${extracted.tagged_users.join(', ')}. Include their names or mentions if relevant.` 
-      : (typeof extracted.tagged_users === 'string' ? `\nTagged Slack Users: ${extracted.tagged_users}. Include their names or mentions if relevant.` : '');
-
-    const draftPrompt = `
-      Write a short, professional WhatsApp follow-up message to the partner regarding this lead based on the notes. Do not include subject lines or formal email signatures.${taggedUsersStr}
-      Student: ${extracted.student_name}
-      Notes: ${extracted.notes}
-    `;
-
-    let draftedMessage = 'Error generating draft.';
-    try {
-      const draftCompletion = await groq.chat.completions.create({
-        messages: [
-          { role: "system", content: "You are a helpful partnership operations assistant drafting WhatsApp messages." },
-          { role: "user", content: draftPrompt }
-        ],
-        model: "llama-3.1-8b-instant",
-      });
-      draftedMessage = draftCompletion.choices[0]?.message?.content || draftedMessage;
-    } catch(e) {
-      console.error("Draft generation failed:", e);
-      // We continue to insert the queue item even if draft failed, so the human can manually draft it.
-    }
+    // Skipped per user request - drafts are now generated on-demand via the Queue UI
+    const draftedMessage = '';
 
     // 9. Insert Approval Queue with raw slack context
     const { error: approvalError } = await supabase.from('approvals').insert({

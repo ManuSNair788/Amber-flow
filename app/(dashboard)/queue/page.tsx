@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Check } from 'lucide-react';
 import { QueueItem } from '@/components/queue/queue-item';
-import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage } from './actions';
+import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage, handleGenerateDraft } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +35,7 @@ export default async function QueuePage() {
               handleCreateWaGroup={handleCreateWaGroup}
               handleDnpQuickAction={handleDnpQuickAction}
               handleEditMessage={handleEditMessage}
+              handleGenerateDraft={handleGenerateDraft}
             />
           );
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save } from 'lucide-react';
+import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw } from 'lucide-react';
 
 function ClockIcon() {
   return (
@@ -17,7 +17,8 @@ export function QueueItem({
   handleReject,
   handleCreateWaGroup,
   handleDnpQuickAction,
-  handleEditMessage
+  handleEditMessage,
+  handleGenerateDraft
 }: { 
   approval: any, 
   waGroupId: string,
@@ -26,11 +27,13 @@ export function QueueItem({
   handleReject: (formData: FormData) => void,
   handleCreateWaGroup: (formData: FormData) => void,
   handleDnpQuickAction: (formData: FormData) => void,
-  handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>
+  handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>,
+  handleGenerateDraft: (formData: FormData) => Promise<void>
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(approval.message);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const partner = approval.students?.partners;
 
@@ -41,21 +44,31 @@ export function QueueItem({
     setIsEditing(false);
   };
 
+  const onGenerate = async (formData: FormData) => {
+    setIsGenerating(true);
+    try {
+      await handleGenerateDraft(formData);
+      // The server action will revalidate the path, which updates the props natively
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
       {/* Student Info */}
       <div className="lg:w-1/4 border-b lg:border-b-0 lg:border-r border-slate-200 pb-4 lg:pb-0 lg:pr-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
-            {approval.students?.name?.charAt(0)}
+            {approval.students?.name?.charAt(0) || 'U'}
           </div>
           <div>
-            <h3 className="font-bold text-slate-900">{approval.students?.name}</h3>
+            <h3 className="font-bold text-slate-900">{approval.students?.name || 'Unknown Lead'}</h3>
             <p className="text-xs text-slate-500">{approval.students?.prospect_id}</p>
           </div>
         </div>
         <div className="space-y-2 text-sm text-slate-600">
-          <p><span className="font-medium text-slate-900">Partner:</span> {partner?.name}</p>
+          <p><span className="font-medium text-slate-900">Partner:</span> {partner?.name || 'Unknown'}</p>
           <p><span className="font-medium text-slate-900">Status:</span> {approval.students?.status}</p>
           
           {/* Follow up Metric requested by user */}
@@ -129,6 +142,21 @@ export function QueueItem({
                   <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save'}
                 </button>
               </div>
+            </div>
+          ) : !approval.message ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-6 gap-3">
+              <p className="text-slate-500 text-sm font-medium">No draft generated yet.</p>
+              <form action={onGenerate}>
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <button 
+                  type="submit" 
+                  disabled={isGenerating}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isGenerating ? 'Generating Draft...' : 'Generate AI Draft'}
+                </button>
+              </form>
             </div>
           ) : (
             <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">

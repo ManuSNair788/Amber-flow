@@ -2,6 +2,53 @@
 
 import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
+import { groq } from '@/lib/groq';
+
+export async function handleGenerateDraft(formData: FormData) {
+  const approvalId = formData.get('approvalId') as string;
+  if (!approvalId) return;
+
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('raw_slack_context, students(id, name, notes)')
+    .eq('id', approvalId)
+    .single();
+
+  if (!approval) return;
+
+  const studentName = (approval.students as any)?.name || 'Unknown Lead';
+  const notes = (approval.students as any)?.notes || '';
+  
+  const draftPrompt = `
+      Write a short, professional WhatsApp follow-up message to the partner regarding this lead based on the notes. Do not include subject lines or formal email signatures.
+      Student: ${studentName}
+      Notes: ${notes}
+  `;
+
+  try {
+    const draftCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are a helpful partnership operations assistant drafting WhatsApp messages." },
+        { role: "user", content: draftPrompt }
+      ],
+      model: "llama-3.1-8b-instant",
+    });
+    
+    const draftedMessage = draftCompletion.choices[0]?.message?.content || '';
+    
+    if (draftedMessage) {
+      await supabase.from('approvals').update({ message: draftedMessage }).eq('id', approvalId);
+      await supabase.from('activities').insert({
+        student_id: (approval.students as any)?.id,
+        action: 'AI generated a WhatsApp draft message',
+        status: 'Drafted'
+      });
+      revalidatePath('/queue');
+    }
+  } catch(e) {
+    console.error("Draft generation failed:", e);
+  }
+}
 
 export async function handleApproveOnly(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
