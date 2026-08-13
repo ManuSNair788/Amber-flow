@@ -13,19 +13,26 @@ export async function POST(req: Request) {
     const slackTimestamp = headers.get('x-slack-request-timestamp');
     const secret = process.env.SLACK_SIGNING_SECRET;
 
-    if (secret && slackSignature && slackTimestamp) {
-      const time = Math.floor(Date.now() / 1000);
-      if (Math.abs(time - parseInt(slackTimestamp, 10)) > 300) {
-        return NextResponse.json({ error: "Request too old" }, { status: 400 });
-      }
+    if (!secret) {
+      console.error("Missing SLACK_SIGNING_SECRET");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
 
-      const sigBaseString = `v0:${slackTimestamp}:${rawBody}`;
-      const mySignature = 'v0=' + crypto.createHmac('sha256', secret).update(sigBaseString).digest('hex');
+    if (!slackSignature || !slackTimestamp) {
+      return NextResponse.json({ error: "Unauthorized: Missing Slack signature headers" }, { status: 401 });
+    }
 
-      // Prevent timing attacks
-      if (mySignature.length !== slackSignature.length || !crypto.timingSafeEqual(Buffer.from(mySignature, 'utf8'), Buffer.from(slackSignature, 'utf8'))) {
-        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-      }
+    const time = Math.floor(Date.now() / 1000);
+    if (Math.abs(time - parseInt(slackTimestamp, 10)) > 300) {
+      return NextResponse.json({ error: "Request too old" }, { status: 400 });
+    }
+
+    const sigBaseString = `v0:${slackTimestamp}:${rawBody}`;
+    const mySignature = 'v0=' + crypto.createHmac('sha256', secret).update(sigBaseString).digest('hex');
+
+    // Prevent timing attacks
+    if (mySignature.length !== slackSignature.length || !crypto.timingSafeEqual(Buffer.from(mySignature, 'utf8'), Buffer.from(slackSignature, 'utf8'))) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
     let body;
