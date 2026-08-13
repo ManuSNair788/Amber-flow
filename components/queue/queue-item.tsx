@@ -56,39 +56,7 @@ export function QueueItem({
     }
   }
 
-  if (approval.is_followup) {
-    return (
-      <div className="bg-amber-50 rounded-2xl shadow-sm border border-amber-200 p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold shadow-inner">
-            {approval.students?.name?.charAt(0) || 'U'}
-          </div>
-          <div>
-            <h3 className="font-bold text-slate-900">{approval.students?.name || 'Unknown Lead'}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-semibold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md">
-                Follow-up #{approval.followup_number}
-              </span>
-              <span className="text-xs text-slate-500">Pending Action</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex-1 px-4 hidden md:block">
-           <p className="text-sm text-slate-600 truncate opacity-70">
-             {approval.raw_slack_context?.split('SLACK_URL:')[0].trim()}
-           </p>
-        </div>
 
-        <a 
-          href={`/leads/${approval.student_id}`}
-          className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
-        >
-          <ExternalLink className="w-4 h-4" /> Open POAI Thread
-        </a>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col lg:flex-row gap-6">
@@ -154,151 +122,163 @@ export function QueueItem({
           </div>
         )}
 
-        {/* AI Draft */}
-        <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex-1 flex flex-col">
-          <div className="flex items-center justify-between mb-2">
-             <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
-              <MessageSquareWarning className="w-4 h-4" />
-              AI Generated WhatsApp Draft
-            </div>
-          </div>
-          {isEditing ? (
-            <div className="flex flex-col gap-2 flex-1">
-              <textarea 
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full flex-1 min-h-[120px] p-2 text-sm text-slate-700 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
-              />
-              <div className="flex gap-2 justify-end mt-2">
-                <button 
-                  onClick={() => {
-                    setIsEditing(false);
-                    setMessage(approval.message);
-                  }}
-                  className="px-3 py-1.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
-                  disabled={isSaving}
-                  type="button"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={onSaveEdit}
-                  className="px-3 py-1.5 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5"
-                  disabled={isSaving}
-                  type="button"
-                >
-                  <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save'}
-                </button>
+        {/* AI Draft - Hidden for followups */}
+        {!approval.is_followup && (
+          <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+               <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+                <MessageSquareWarning className="w-4 h-4" />
+                AI Generated WhatsApp Draft
               </div>
             </div>
-          ) : !approval.message ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-6 gap-3">
-              <p className="text-slate-500 text-sm font-medium">No draft generated yet.</p>
-              <form action={onGenerate}>
-                <input type="hidden" name="approvalId" value={approval.id} />
-                <button 
-                  type="submit" 
-                  disabled={isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
-                >
-                  {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {isGenerating ? 'Generating Draft...' : 'Generate AI Draft'}
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">
-              {approval.message}
-            </div>
-          )}
-        </div>
+            {isEditing ? (
+              <div className="flex flex-col gap-2 flex-1">
+                <textarea 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full flex-1 min-h-[120px] p-2 text-sm text-slate-700 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+                />
+                <div className="flex gap-2 justify-end mt-2">
+                  <button 
+                    onClick={() => {
+                      setIsEditing(false);
+                      setMessage(approval.message);
+                    }}
+                    className="px-3 py-1.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                    disabled={isSaving}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={onSaveEdit}
+                    className="px-3 py-1.5 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5"
+                    disabled={isSaving}
+                    type="button"
+                  >
+                    <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : !approval.message ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-6 gap-3">
+                <p className="text-slate-500 text-sm font-medium">No draft generated yet.</p>
+                <form action={onGenerate}>
+                  <input type="hidden" name="approvalId" value={approval.id} />
+                  <button 
+                    type="submit" 
+                    disabled={isGenerating}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {isGenerating ? 'Generating Draft...' : 'Generate AI Draft'}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">
+                {approval.message}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions */}
       <div className="flex flex-row lg:flex-col gap-3 justify-center">
-        <form action={handleSendToWhatsApp}>
-          <input type="hidden" name="approvalId" value={approval.id} />
-          <input type="hidden" name="waGroupId" value={waGroupId} />
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-            <Phone className="w-4 h-4" /> Send to WA
-          </button>
-        </form>
-
-        <form action={handleApproveOnly}>
-          <input type="hidden" name="approvalId" value={approval.id} />
-          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-            <Check className="w-4 h-4" /> Approve (Manual)
-          </button>
-        </form>
-
-        {approval.students?.status === 'DNP' && (
-          <form action={handleDnpQuickAction}>
-            <input type="hidden" name="approvalId" value={approval.id} />
-            <input type="hidden" name="waGroupId" value={waGroupId} />
-            <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-              <MessageSquareWarning className="w-4 h-4" /> DNP Quick Action
-            </button>
-          </form>
-        )}
-
-        {!showRejectInput ? (
-          <button 
-            type="button" 
-            onClick={() => setShowRejectInput(true)} 
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors"
+        {approval.is_followup ? (
+          <a 
+            href={`/leads/${approval.student_id}`}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
           >
-            <X className="w-4 h-4" /> Reject
-          </button>
+            <ExternalLink className="w-4 h-4" /> Respond in Thread
+          </a>
         ) : (
-          <form action={handleReject} className="flex flex-col gap-2 bg-rose-50 p-3 rounded-lg border border-rose-100">
-            <input type="hidden" name="approvalId" value={approval.id} />
-            <input 
-              type="text" 
-              name="reason" 
-              placeholder="Reason for rejection..." 
-              required
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              className="w-full text-sm p-2 rounded border border-rose-200 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400 text-slate-800"
-            />
-            <div className="flex gap-2">
+          <>
+            <form action={handleSendToWhatsApp}>
+              <input type="hidden" name="approvalId" value={approval.id} />
+              <input type="hidden" name="waGroupId" value={waGroupId} />
+              <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                <Phone className="w-4 h-4" /> Send to WA
+              </button>
+            </form>
+
+            <form action={handleApproveOnly}>
+              <input type="hidden" name="approvalId" value={approval.id} />
+              <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                <Check className="w-4 h-4" /> Approve (Manual)
+              </button>
+            </form>
+
+            {approval.students?.status === 'DNP' && (
+              <form action={handleDnpQuickAction}>
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <input type="hidden" name="waGroupId" value={waGroupId} />
+                <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                  <MessageSquareWarning className="w-4 h-4" /> DNP Quick Action
+                </button>
+              </form>
+            )}
+
+            {!showRejectInput ? (
               <button 
                 type="button" 
-                onClick={() => {
-                  setShowRejectInput(false);
-                  setRejectReason("");
-                }}
-                className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
+                onClick={() => setShowRejectInput(true)} 
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-sm font-medium rounded-lg transition-colors"
               >
-                Cancel
+                <X className="w-4 h-4" /> Reject
               </button>
+            ) : (
+              <form action={handleReject} className="flex flex-col gap-2 bg-rose-50 p-3 rounded-lg border border-rose-100">
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <input 
+                  type="text" 
+                  name="reason" 
+                  placeholder="Reason for rejection..." 
+                  required
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="w-full text-sm p-2 rounded border border-rose-200 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400 text-slate-800"
+                />
+                <div className="flex gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setShowRejectInput(false);
+                      setRejectReason("");
+                    }}
+                    className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded"
+                  >
+                    <X className="w-3 h-3" /> Confirm
+                  </button>
+                </div>
+              </form>
+            )}
+            {!isEditing && (
               <button 
-                type="submit" 
-                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Edit clicked for', approval.id);
+                  try {
+                    setIsEditing(true);
+                  } catch (err) {
+                    console.error('Error setting edit state:', err);
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-medium rounded-lg transition-colors"
               >
-                <X className="w-3 h-3" /> Confirm
+                <Edit3 className="w-4 h-4" /> Edit
               </button>
-            </div>
-          </form>
+            )}
+          </>
         )}
-        {!isEditing && (
-          <button 
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              console.log('Edit clicked for', approval.id);
-              try {
-                setIsEditing(true);
-              } catch (err) {
-                console.error('Error setting edit state:', err);
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-medium rounded-lg transition-colors"
-          >
-            <Edit3 className="w-4 h-4" /> Edit
-          </button>
-        )}
-      </div>
     </div>
   );
 }
