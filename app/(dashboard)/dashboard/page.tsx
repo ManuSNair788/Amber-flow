@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Users, ListChecks, CheckCircle, Clock } from 'lucide-react';
+import { Users, ListChecks, CheckCircle, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { SimulateWebhook } from '@/components/simulate-webhook';
 import { draftDnpFollowUp } from './actions';
@@ -40,7 +40,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const { data: recentCompletedActivities } = await supabase
     .from('activities')
-    .select('id, action, status, timestamp, students(name, prospect_id, partners(name))')
+    .select('id, action, status, timestamp, students(name, prospect_id, partners(name), approvals(raw_slack_context))')
     .in('status', ['Approved', 'Message Sent', 'Rejected', 'DNP Handled', 'Responded', 'Ignored'])
     .order('timestamp', { ascending: false })
     .limit(8);
@@ -147,8 +147,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 : `Initial Lead pending`;
 
               return (
-                <div key={item.id} className="flex flex-col justify-center p-4 rounded-xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 transition-colors">
-                  <div className="flex justify-between items-start mb-1">
+                <Link key={item.id} href="/queue" className="group flex flex-col justify-center p-4 rounded-xl bg-amber-50/50 hover:bg-amber-50 border border-amber-100 transition-all hover:shadow-sm relative">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ArrowRight className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex justify-between items-start mb-1 pr-6">
                     <p className="font-bold text-slate-900 truncate">{displayName}</p>
                     <span className="shrink-0 text-xs text-slate-400">{new Date(item.created_at).toLocaleDateString()}</span>
                   </div>
@@ -158,7 +161,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                       {pendingLabel}
                     </span>
                   </div>
-                </div>
+                </Link>
               );
             })}
             {(!pendingItems || pendingItems.length === 0) && (
@@ -177,8 +180,41 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                 ? `Lead #${student.prospect_id}` 
                 : student.name;
 
-              return (
-                <div key={act.id} className="flex flex-col justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors">
+              let slackUrl = '';
+              if (student.approvals && Array.isArray(student.approvals)) {
+                const approvalWithUrl = student.approvals.find((a: any) => a.raw_slack_context?.includes('SLACK_URL:'));
+                if (approvalWithUrl) {
+                  slackUrl = approvalWithUrl.raw_slack_context.split('SLACK_URL:')[1].trim();
+                }
+              }
+
+              const InnerContent = (
+                <>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ExternalLink className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="flex justify-between items-start mb-1 pr-6">
+                    <p className="font-bold text-slate-900 truncate">{displayName}</p>
+                    <span className="shrink-0 text-xs text-slate-400">{new Date(act.timestamp).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 mb-2">{partner.name || 'Unknown Partner'}</p>
+                  <div className="flex items-start gap-2">
+                    <div className="shrink-0 mt-0.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 leading-snug">
+                      {act.action}
+                    </span>
+                  </div>
+                </>
+              );
+
+              return slackUrl ? (
+                <a key={act.id} href={slackUrl} target="_blank" rel="noopener noreferrer" className="group relative flex flex-col justify-center p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all hover:shadow-sm">
+                  {InnerContent}
+                </a>
+              ) : (
+                <div key={act.id} className="flex flex-col justify-center p-4 rounded-xl bg-slate-50 border border-slate-200">
                   <div className="flex justify-between items-start mb-1">
                     <p className="font-bold text-slate-900 truncate">{displayName}</p>
                     <span className="shrink-0 text-xs text-slate-400">{new Date(act.timestamp).toLocaleDateString()}</span>
