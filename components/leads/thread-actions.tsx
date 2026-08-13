@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { Check, X } from 'lucide-react';
-import { handleApproveOnly, handleReject } from '@/app/(dashboard)/queue/actions';
+import { handleSendToWhatsApp, handleReject } from '@/app/(dashboard)/queue/actions';
 
-export function ThreadActions({ approvalId }: { approvalId: string }) {
+export function ThreadActions({ approvalId, waGroupId }: { approvalId: string, waGroupId: string }) {
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onApprove = async (formData: FormData) => {
     setIsSubmitting(true);
-    await handleApproveOnly(formData);
+    await handleSendToWhatsApp(formData);
     // Next.js router handles revalidation via Server Actions.
     setIsSubmitting(false);
   };
@@ -27,6 +27,7 @@ export function ThreadActions({ approvalId }: { approvalId: string }) {
     <div className="mt-3 flex gap-2">
       <form action={onApprove} className="flex-1">
         <input type="hidden" name="approvalId" value={approvalId} />
+        <input type="hidden" name="waGroupId" value={waGroupId} />
         <button 
           type="submit" 
           disabled={isSubmitting}

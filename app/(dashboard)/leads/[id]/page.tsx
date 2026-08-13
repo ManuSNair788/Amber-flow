@@ -6,7 +6,7 @@ import { ThreadActions } from '@/components/leads/thread-actions';
 export default async function Student360Page({ params }: { params: { id: string } }) {
   const { data: student } = await supabase
     .from('students')
-    .select('*, partners(name)')
+    .select('*, partners(name, whatsapp_group_id)')
     .eq('id', params.id)
     .single();
 
@@ -149,7 +149,7 @@ export default async function Student360Page({ params }: { params: { id: string 
                           )}
 
                           {app.status === 'pending' && (
-                            <ThreadActions approvalId={app.id} />
+                            <ThreadActions approvalId={app.id} waGroupId={student.partners?.whatsapp_group_id || ''} />
                           )}
                         </div>
                       ))}
