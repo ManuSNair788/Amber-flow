@@ -58,10 +58,33 @@ export async function handleApproveOnly(formData: FormData) {
     .from('approvals')
     .update({ status: 'approved' })
     .eq('id', approvalId)
-    .select('student_id')
+    .select('student_id, slack_threads(slack_channel_id, slack_thread_ts)')
     .single();
 
   if (approval) {
+    const slackThread = approval.slack_threads as any;
+    if (slackThread?.slack_thread_ts && process.env.SLACK_BOT_TOKEN) {
+      const replyText = `✅ Approved! (Manual check)`;
+      try {
+        const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            channel: slackThread.slack_channel_id,
+            thread_ts: slackThread.slack_thread_ts,
+            text: replyText
+          })
+        });
+        const data = await slackRes.json();
+        if (!data.ok) console.error('Slack API error in handleApproveOnly:', data.error);
+      } catch (err) {
+        console.error('Failed to send Slack reply:', err);
+      }
+    }
+
     await supabase.from('activities').insert({
       student_id: approval.student_id,
       action: `Message approved (Manual check)`,
@@ -113,7 +136,7 @@ export async function handleSendToWhatsApp(formData: FormData) {
       
       if (process.env.SLACK_BOT_TOKEN) {
         try {
-          await fetch('https://slack.com/api/chat.postMessage', {
+          const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
@@ -125,6 +148,8 @@ export async function handleSendToWhatsApp(formData: FormData) {
               text: replyText
             })
           });
+          const data = await slackRes.json();
+          if (!data.ok) console.error('Slack API error in handleSendToWhatsApp:', data.error);
         } catch (err) {
           console.error('Failed to send Slack reply:', err);
         }
@@ -161,7 +186,7 @@ export async function handleReject(formData: FormData) {
       
       if (process.env.SLACK_BOT_TOKEN) {
         try {
-          await fetch('https://slack.com/api/chat.postMessage', {
+          const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
@@ -173,6 +198,8 @@ export async function handleReject(formData: FormData) {
               text: replyText
             })
           });
+          const data = await slackRes.json();
+          if (!data.ok) console.error('Slack API error in handleReject:', data.error);
         } catch (err) {
           console.error('Failed to send Slack reply:', err);
         }
