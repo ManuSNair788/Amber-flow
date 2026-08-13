@@ -3,16 +3,37 @@
 import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 
-export async function handleApprove(formData: FormData) {
+export async function handleApproveOnly(formData: FormData) {
   const approvalId = formData.get('approvalId') as string;
-  const waGroupId = formData.get('waGroupId') as string;
   if (!approvalId) return;
 
   const { data: approval } = await supabase
     .from('approvals')
     .update({ status: 'approved' })
     .eq('id', approvalId)
+    .select('student_id')
+    .single();
+
+  if (approval) {
+    await supabase.from('activities').insert({
+      student_id: approval.student_id,
+      action: `Message approved (Manual check)`,
+      status: 'Approved'
+    });
+  }
+
+  revalidatePath('/queue');
+}
+
+export async function handleSendToWhatsApp(formData: FormData) {
+  const approvalId = formData.get('approvalId') as string;
+  const waGroupId = formData.get('waGroupId') as string;
+  if (!approvalId) return;
+
+  const { data: approval } = await supabase
+    .from('approvals')
     .select('student_id, message')
+    .eq('id', approvalId)
     .single();
 
   if (approval) {
@@ -39,8 +60,8 @@ export async function handleApprove(formData: FormData) {
 
     await supabase.from('activities').insert({
       student_id: approval.student_id,
-      action: `Message approved & sent to WhatsApp ${waGroupId ? `(${waGroupId})` : ''}`,
-      status: 'Approved'
+      action: `Message sent to WhatsApp ${waGroupId ? `(${waGroupId})` : ''}`,
+      status: 'Message Sent'
     });
   }
 

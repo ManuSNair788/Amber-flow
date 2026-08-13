@@ -12,7 +12,8 @@ function ClockIcon() {
 export function QueueItem({ 
   approval, 
   waGroupId,
-  handleApprove,
+  handleApproveOnly,
+  handleSendToWhatsApp,
   handleReject,
   handleCreateWaGroup,
   handleDnpQuickAction,
@@ -20,7 +21,8 @@ export function QueueItem({
 }: { 
   approval: any, 
   waGroupId: string,
-  handleApprove: (formData: FormData) => void,
+  handleApproveOnly: (formData: FormData) => void,
+  handleSendToWhatsApp: (formData: FormData) => void,
   handleReject: (formData: FormData) => void,
   handleCreateWaGroup: (formData: FormData) => void,
   handleDnpQuickAction: (formData: FormData) => void,
@@ -138,11 +140,18 @@ export function QueueItem({
 
       {/* Actions */}
       <div className="flex flex-row lg:flex-col gap-3 justify-center">
-        <form action={handleApprove}>
+        <form action={handleSendToWhatsApp}>
           <input type="hidden" name="approvalId" value={approval.id} />
           <input type="hidden" name="waGroupId" value={waGroupId} />
+          <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+            <Phone className="w-4 h-4" /> Send to WA
+          </button>
+        </form>
+
+        <form action={handleApproveOnly}>
+          <input type="hidden" name="approvalId" value={approval.id} />
           <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
-            <Phone className="w-4 h-4" /> Approve & Send to WA
+            <Check className="w-4 h-4" /> Approve (Manual)
           </button>
         </form>
 
