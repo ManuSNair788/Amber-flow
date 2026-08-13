@@ -81,7 +81,7 @@ export function DateRangePicker() {
 
   const clearFilter = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`${pathname}?filter=all`);
+    router.push(pathname);
     setIsOpen(false);
     setRangeStart(null);
     setRangeEnd(null);

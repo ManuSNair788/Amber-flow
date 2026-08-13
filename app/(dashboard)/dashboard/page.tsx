@@ -48,8 +48,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     .from('approvals')
     .select('id, is_followup, followup_number, created_at, students(name, prospect_id, partners(name))')
     .eq('status', 'pending')
-    .gte('created_at', isoStart)
-    .lte('created_at', isoEnd)
     .order('created_at', { ascending: false })
     .limit(8);
 
