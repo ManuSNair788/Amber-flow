@@ -3,7 +3,6 @@ import { Users, ListChecks, CheckCircle, Clock, ArrowRight, ExternalLink } from 
 import Link from 'next/link';
 import { SimulateWebhook } from '@/components/simulate-webhook';
 import { draftDnpFollowUp } from './actions';
-import { DateRangePicker } from '@/components/date-range-picker';
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +26,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     if (filter === 'week') startDate.setDate(now.getDate() - 7);
     if (filter === 'month') startDate.setMonth(now.getMonth() - 1);
     if (filter === 'year') startDate.setFullYear(now.getFullYear() - 1);
+    if (filter === 'all') startDate = new Date(0); // Fetch all records
   }
 
   const isoStart = startDate.toISOString();
@@ -109,10 +109,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-500 mt-1">Overview of leads you've been tagged in.</p>
-        </div>
-        
-        <div>
-          <DateRangePicker />
         </div>
       </div>
 

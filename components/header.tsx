@@ -3,6 +3,7 @@
 import { Calendar, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { LiveNotifications } from './live-notifications';
+import { DateRangePicker } from './date-range-picker';
 
 export function Header() {
   const [dateStr, setDateStr] = useState('');
@@ -28,10 +29,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 bg-white border border-slate-200 shadow-sm rounded-lg px-4 py-2 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-50 transition-colors">
-          <Calendar className="w-4 h-4 text-slate-500" />
-          <span suppressHydrationWarning>{dateStr || 'Loading...'}</span>
-        </div>
+        <DateRangePicker />
         
         <LiveNotifications />
 
