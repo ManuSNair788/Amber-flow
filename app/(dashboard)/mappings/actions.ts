@@ -24,7 +24,10 @@ export async function updateMapping(partnerId: string, whatsappNumber: string, w
 
 export async function fetchWhatsAppGroups() {
   try {
-    const BOT_URL = process.env.WHATSAPP_BOT_URL || 'http://localhost:3001'
+    const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+    const host = process.env.VERCEL_URL || 'localhost:3000';
+    const BOT_URL = process.env.WHATSAPP_BOT_URL || `${proto}://${host}/api/bot`;
+    
     const response = await fetch(`${BOT_URL}/groups`, { cache: 'no-store' })
     
     if (!response.ok) {

@@ -110,8 +110,9 @@ export async function handleSendToWhatsApp(formData: FormData) {
   if (approval) {
     // Attempt to send message via the new WhatsApp Bot Microservice
     try {
-      // In production, this URL would be an env variable pointing to your Render/Railway instance
-      const BOT_URL = process.env.WHATSAPP_BOT_URL || 'http://localhost:3001';
+      const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+      const host = process.env.VERCEL_URL || 'localhost:3000';
+      const BOT_URL = process.env.WHATSAPP_BOT_URL || `${proto}://${host}/api/bot`;
       
       const response = await fetch(`${BOT_URL}/send-message`, {
         method: 'POST',
@@ -245,7 +246,9 @@ export async function handleDnpQuickAction(formData: FormData) {
     const dnpMessage = `Hi Team, we attempted to contact ${studentName} but they did not pick up (DNP). We will attempt to follow up again later.`;
 
     try {
-      const BOT_URL = process.env.WHATSAPP_BOT_URL || 'http://localhost:3001';
+      const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+      const host = process.env.VERCEL_URL || 'localhost:3000';
+      const BOT_URL = process.env.WHATSAPP_BOT_URL || `${proto}://${host}/api/bot`;
       
       const response = await fetch(`${BOT_URL}/send-message`, {
         method: 'POST',
