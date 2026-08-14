@@ -27,7 +27,7 @@ export function QueueItem({
   handleApproveOnly: (formData: FormData) => void,
   handleSendToWhatsApp: (formData: FormData) => void,
   handleReject: (formData: FormData) => void,
-  handleCreateWaGroup: (formData: FormData) => void,
+  handleCreateWaGroup: (formData: FormData) => Promise<{ success: boolean, error?: string } | void>,
   handleDnpQuickAction: (formData: FormData) => void,
   handleEditMessage: (id: string, msg: string) => Promise<{success: boolean, error?: string}>,
   handleGenerateDraft: (formData: FormData) => Promise<void>,
