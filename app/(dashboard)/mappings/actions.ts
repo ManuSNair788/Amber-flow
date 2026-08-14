@@ -37,6 +37,22 @@ export async function createPartner(name: string) {
   return { success: true }
 }
 
+export async function deletePartner(id: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('partners').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/mappings')
+  return { success: true }
+}
+
+export async function updatePartnerName(id: string, name: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('partners').update({ name }).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/mappings')
+  return { success: true }
+}
+
 export async function fetchWhatsAppGroups() {
   try {
     // Return mock groups directly instead of fetching from an internal API route

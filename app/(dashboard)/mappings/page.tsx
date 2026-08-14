@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { Network, Plus, Phone, Users } from 'lucide-react'
-import { MappingForm } from './mapping-form'
 import { createPartner } from './actions'
+import { MappingsClient } from './mappings-client'
 
 export const metadata = {
   title: 'Channel Mappings | POAI'
@@ -54,20 +54,7 @@ export default async function MappingsPage() {
           <div className="col-span-1 text-right">Action</div>
         </div>
         
-        <div className="divide-y divide-slate-100">
-          {partners?.map((partner) => (
-            <MappingForm 
-              key={partner.id} 
-              partner={partner} 
-            />
-          ))}
-          
-          {(!partners || partners.length === 0) && (
-            <div className="p-8 text-center text-slate-500">
-              No partners found.
-            </div>
-          )}
-        </div>
+        <MappingsClient partners={partners || []} />
       </div>
     </div>
   )

@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { updateMapping } from './actions'
-import { Check, Save } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { updateMapping, deletePartner, updatePartnerName } from './actions'
+import { Check, Save, Trash2, Edit2, X } from 'lucide-react'
 
 export function MappingForm({ 
   partner 
 }: { 
   partner: any 
 }) {
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [partnerName, setPartnerName] = useState(partner.name)
+  const [isPending, startTransition] = useTransition()
   const [whatsapp, setWhatsapp] = useState(partner.whatsapp_number || '')
   const [whatsappGroup, setWhatsappGroup] = useState(partner.whatsapp_group_id || '')
   const [mappingType, setMappingType] = useState<'individual' | 'group'>(
@@ -25,25 +28,54 @@ export function MappingForm({
     const numToSave = mappingType === 'individual' ? whatsapp : null;
     const groupToSave = mappingType === 'group' ? whatsappGroup : null;
     
-    const res = await updateMapping(partner.id, numToSave, groupToSave)
+    // Update mapping
+    await updateMapping(partner.id, numToSave, groupToSave)
+    
+    // Update name if changed
+    if (partnerName !== partner.name) {
+      await updatePartnerName(partner.id, partnerName)
+    }
+    
     setLoading(false)
-    if (res?.success) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } else {
-      alert(res?.error || 'Failed to save')
+    setIsEditingName(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const handleDelete = () => {
+    if (confirm(`Are you sure you want to delete ${partner.name}?`)) {
+      startTransition(() => {
+        deletePartner(partner.id)
+      })
     }
   }
 
   const isDirty = 
     whatsapp !== (partner.whatsapp_number || '') || 
     whatsappGroup !== (partner.whatsapp_group_id || '') ||
-    mappingType !== (partner.whatsapp_group_id ? 'group' : 'individual')
+    mappingType !== (partner.whatsapp_group_id ? 'group' : 'individual') ||
+    partnerName !== partner.name
 
   return (
-    <div className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 transition-colors">
-      <div className="col-span-3 font-medium text-slate-900">
-        {partner.name}
+    <div className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-slate-50 transition-colors ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className="col-span-3 flex items-center gap-2 group">
+        {isEditingName ? (
+          <input
+            type="text"
+            value={partnerName}
+            onChange={(e) => setPartnerName(e.target.value)}
+            className="w-full text-sm px-2 py-1 border border-indigo-500 rounded focus:outline-none"
+            autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          />
+        ) : (
+          <>
+            <span className="font-medium text-slate-900">{partner.name}</span>
+            <button onClick={() => setIsEditingName(true)} className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 transition-opacity">
+              <Edit2 className="w-3 h-3" />
+            </button>
+          </>
+        )}
       </div>
       
       {/* Mapping Type Toggle */}
@@ -83,10 +115,10 @@ export function MappingForm({
           />
         )}
       </div>
-      <div className="col-span-1 text-right">
+      <div className="col-span-1 text-right flex items-center justify-end gap-1">
         {saved ? (
           <button disabled className="inline-flex items-center justify-center p-2 text-emerald-600 bg-emerald-50 rounded-lg">
-            <Check className="w-5 h-5" />
+            <Check className="w-4 h-4" />
           </button>
         ) : (
           <button
@@ -95,9 +127,16 @@ export function MappingForm({
             className="inline-flex items-center justify-center p-2 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:bg-slate-100 disabled:text-slate-400 rounded-lg transition-colors"
             title="Save Mapping"
           >
-            <Save className="w-5 h-5" />
+            <Save className="w-4 h-4" />
           </button>
         )}
+        <button
+          onClick={handleDelete}
+          className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Delete Partner"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     </div>
   )
