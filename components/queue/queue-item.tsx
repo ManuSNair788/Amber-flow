@@ -198,64 +198,47 @@ export function QueueItem({
           </div>
         )}
 
-        {/* AI Draft - Hidden for followups */}
+        {/* AI Draft / Manual Message Input - Hidden for followups */}
         {!approval.is_followup && (
           <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-2">
                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
                 <MessageSquareWarning className="w-4 h-4" />
-                AI Generated WhatsApp Draft
+                WhatsApp Message (AI Draft or Manual)
               </div>
+              <form action={onGenerate}>
+                <input type="hidden" name="approvalId" value={approval.id} />
+                <button 
+                  type="submit" 
+                  disabled={isGenerating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-xs font-bold rounded transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {isGenerating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  {isGenerating ? 'Generating...' : 'Generate AI Draft'}
+                </button>
+              </form>
             </div>
-            {isEditing ? (
-              <div className="flex flex-col gap-2 flex-1">
-                <textarea 
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full flex-1 min-h-[120px] p-2 text-sm text-slate-700 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
-                />
-                <div className="flex gap-2 justify-end mt-2">
-                  <button 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setMessage(approval.message);
-                    }}
-                    className="px-3 py-1.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
-                    disabled={isSaving}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
+            
+            <div className="flex flex-col gap-2 flex-1">
+              <textarea 
+                value={message || ''}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your WhatsApp message manually, or click 'Generate AI Draft'..."
+                className="w-full flex-1 min-h-[120px] p-3 text-sm text-slate-700 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none bg-white shadow-inner"
+              />
+              {message !== approval.message && (
+                <div className="flex justify-end mt-1">
                   <button 
                     onClick={onSaveEdit}
-                    className="px-3 py-1.5 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5"
+                    className="px-3 py-1.5 text-xs text-white bg-indigo-600 rounded flex items-center gap-1.5 hover:bg-indigo-700 transition-colors shadow-sm"
                     disabled={isSaving}
                     type="button"
                   >
-                    <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save'}
+                    <Save className="w-3 h-3" /> {isSaving ? 'Saving...' : 'Save Draft'}
                   </button>
                 </div>
-              </div>
-            ) : !approval.message ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-6 gap-3">
-                <p className="text-slate-500 text-sm font-medium">No draft generated yet.</p>
-                <form action={onGenerate}>
-                  <input type="hidden" name="approvalId" value={approval.id} />
-                  <button 
-                    type="submit" 
-                    disabled={isGenerating}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-50"
-                  >
-                    {isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? 'Generating Draft...' : 'Generate AI Draft'}
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="text-slate-700 text-sm whitespace-pre-wrap font-medium">
-                {approval.message}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -302,7 +285,8 @@ export function QueueItem({
             <form action={wrapAction(handleSendToWhatsApp)}>
               <input type="hidden" name="approvalId" value={approval.id} />
               <input type="hidden" name="waGroupId" value={waGroupId} />
-              <button type="submit" disabled={isReplying || !approval.message} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+              <input type="hidden" name="messageOverride" value={message || ''} />
+              <button type="submit" disabled={isReplying || !message || message.trim() === ''} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Phone className="w-4 h-4" /> Send to WA
               </button>
             </form>
@@ -365,23 +349,7 @@ export function QueueItem({
                 </div>
               </form>
             )}
-            {!isEditing && (
-              <button 
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  console.log('Edit clicked for', approval.id);
-                  try {
-                    setIsEditing(true);
-                  } catch (err) {
-                    console.error('Error setting edit state:', err);
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-medium rounded-lg transition-colors"
-              >
-                <Edit3 className="w-4 h-4" /> Edit
-              </button>
-            )}
+
           </>
         )}
       </div>

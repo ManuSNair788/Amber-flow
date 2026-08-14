@@ -108,9 +108,14 @@ export async function handleSendToWhatsApp(formData: FormData) {
     .single();
 
   if (approval) {
-    if (!approval.message || approval.message.trim() === '') {
+    let finalMessage = formData.get('messageOverride') as string;
+    if (!finalMessage) {
+      finalMessage = approval.message;
+    }
+
+    if (!finalMessage || finalMessage.trim() === '') {
        console.error("Cannot send empty message to WhatsApp");
-       return { success: false, error: "Cannot send an empty message. Please generate a draft first." };
+       return { success: false, error: "Cannot send an empty message. Please type a message or generate a draft." };
     }
 
     // Send message via UltraMsg
@@ -128,7 +133,7 @@ export async function handleSendToWhatsApp(formData: FormData) {
         const params = new URLSearchParams({
           token: token,
           to: destination,
-          body: approval.message
+          body: finalMessage
         });
 
         const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
