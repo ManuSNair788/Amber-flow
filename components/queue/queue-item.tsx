@@ -45,6 +45,13 @@ export function QueueItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
   
+  const defaultGroupName = `Amber - ${approval.students?.name || 'New Lead'}`;
+  const defaultGroupMessage = `Hello! This group has been created to coordinate for the student lead: ${approval.students?.name || 'New Lead'}`;
+  
+  const [groupName, setGroupName] = useState(defaultGroupName);
+  const [groupNumbers, setGroupNumbers] = useState("");
+  const [groupMessage, setGroupMessage] = useState(defaultGroupMessage);
+  
   const partner = approval.students?.partners;
   const threadHistory = approval.is_followup && approval.slack_threads?.approvals 
     ? [...approval.slack_threads.approvals].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
@@ -163,42 +170,12 @@ export function QueueItem({
 
         {/* Create WA Group Action */}
         <div className="mt-6 pt-4 border-t border-slate-100">
-          {!showCreateGroup ? (
-            <button 
-              type="button" 
-              onClick={() => setShowCreateGroup(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
-              <Phone className="w-4 h-4" /> Create WA Group
-            </button>
-          ) : (
-            <form action={onCreateWaGroup} className="flex flex-col gap-2">
-              <input type="hidden" name="studentId" value={approval.students?.id} />
-              <input type="hidden" name="studentName" value={approval.students?.name} />
-              <input 
-                type="text" 
-                name="groupNumber" 
-                placeholder="Enter WhatsApp Number..." 
-                required
-                className="w-full text-sm p-2 rounded border border-[#25D366]/40 focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366] bg-[#25D366]/5"
-              />
-              <div className="flex gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => setShowCreateGroup(false)}
-                  className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isReplying}
-                  className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold rounded disabled:opacity-50"
-                >
-                  Confirm
-                </button>
-              </div>
-            </form>
-          )}
+          <button 
+            type="button" 
+            onClick={() => setShowCreateGroup(true)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
+            <Phone className="w-4 h-4" /> Create WA Group
+          </button>
         </div>
       </div>
 
@@ -405,6 +382,80 @@ export function QueueItem({
           </>
         )}
       </div>
+
+      {/* WA Group Modal */}
+      {showCreateGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 flex flex-col gap-4 relative">
+            <button 
+              onClick={() => setShowCreateGroup(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Phone className="w-5 h-5 text-[#25D366]" /> Create WhatsApp Group
+            </h2>
+            <form action={onCreateWaGroup} className="flex flex-col gap-4 mt-2">
+              <input type="hidden" name="studentId" value={approval.students?.id} />
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-600">Group Name</label>
+                <input 
+                  type="text" 
+                  name="groupName" 
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  required
+                  className="w-full text-sm p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-600">Participants (Comma-separated numbers)</label>
+                <input 
+                  type="text" 
+                  name="groupNumbers" 
+                  value={groupNumbers}
+                  onChange={(e) => setGroupNumbers(e.target.value)}
+                  placeholder="e.g. 919876543210, 919876543211"
+                  required
+                  className="w-full text-sm p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366]"
+                />
+                <p className="text-[10px] text-slate-500">Ensure numbers include the country code without the '+' (e.g. 91 for India).</p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-600">Introductory Message</label>
+                <textarea 
+                  name="groupMessage" 
+                  value={groupMessage}
+                  onChange={(e) => setGroupMessage(e.target.value)}
+                  className="w-full text-sm p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366] min-h-[80px] resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowCreateGroup(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isReplying || !groupName || !groupNumbers}
+                  className="px-6 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isReplying && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  Create & Send
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

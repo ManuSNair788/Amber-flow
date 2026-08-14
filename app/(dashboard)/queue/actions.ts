@@ -241,34 +241,57 @@ export async function handleReject(formData: FormData) {
 export async function handleCreateWaGroup(formData: FormData) {
   const studentId = formData.get('studentId') as string;
   const studentName = formData.get('studentName') as string || 'New Lead';
-  const groupNumber = formData.get('groupNumber') as string;
+  const groupName = formData.get('groupName') as string || `Amber - ${studentName}`;
+  const groupNumbers = formData.get('groupNumbers') as string;
+  const groupMessage = formData.get('groupMessage') as string;
   
-  if (!studentId || !groupNumber) return { success: false, error: 'Missing information' };
+  if (!studentId || !groupNumbers) return { success: false, error: 'Missing information' };
 
   const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
   const token = process.env.ULTRAMSG_TOKEN;
 
   if (instanceId && token) {
     try {
-      const cleanNumber = groupNumber.replace('+', '').trim();
-      const groupName = `Amber - ${studentName}`;
+      // Clean and format contacts
+      const numberArray = groupNumbers.split(',').map(n => n.replace('+', '').trim()).filter(n => n);
+      const cleanContacts = numberArray.join(',');
       
-      const params = new URLSearchParams({
+      const createParams = new URLSearchParams({
         token: token,
         group_name: groupName,
-        contacts: cleanNumber
+        contacts: cleanContacts
       });
 
-      const response = await fetch(`https://api.ultramsg.com/${instanceId}/groups/create`, {
+      const createResponse = await fetch(`https://api.ultramsg.com/${instanceId}/groups/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        body: createParams.toString()
       });
 
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        console.error('UltraMsg failed to create group:', data);
-        return { success: false, error: 'Failed to create group via UltraMsg.' };
+      const createData = await createResponse.json();
+      if (!createResponse.ok || createData.error) {
+        console.error('UltraMsg failed to create group:', createData);
+        return { success: false, error: 'Failed to create group via UltraMsg. Ensure numbers include the country code (e.g., 91 for India).' };
+      }
+
+      const createdGroupId = createData.message || createData.id;
+      
+      if (groupMessage && groupMessage.trim() !== '' && createdGroupId) {
+         const msgParams = new URLSearchParams({
+           token: token,
+           to: createdGroupId,
+           body: groupMessage
+         });
+
+         const msgResponse = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+           body: msgParams.toString()
+         });
+         
+         if (!msgResponse.ok) {
+           console.error("Failed to send intro message to the new group:", await msgResponse.text());
+         }
       }
     } catch (e) {
       console.error('Failed to connect to UltraMsg for group creation:', e);
@@ -280,7 +303,7 @@ export async function handleCreateWaGroup(formData: FormData) {
 
   await supabase.from('activities').insert({
     student_id: studentId,
-    action: `WhatsApp Group created with ${groupNumber}`,
+    action: `WhatsApp Group "${groupName}" created`,
     status: 'Group Created'
   });
 
