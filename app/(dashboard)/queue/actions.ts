@@ -241,7 +241,7 @@ export async function handleReject(formData: FormData) {
 export async function handleCreateWaGroup(formData: FormData) {
   const studentId = formData.get('studentId') as string;
   const studentName = formData.get('studentName') as string || 'New Lead';
-  const groupName = formData.get('groupName') as string || `Amber - ${studentName}`;
+  const groupName = formData.get('groupName') as string || `${studentName} || [University Name] || amber accommodation`;
   const groupNumbers = formData.get('groupNumbers') as string;
   const groupMessage = formData.get('groupMessage') as string;
   

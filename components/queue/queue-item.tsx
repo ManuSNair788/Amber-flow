@@ -45,7 +45,7 @@ export function QueueItem({
   const [isReplying, setIsReplying] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
   
-  const defaultGroupName = `Amber - ${approval.students?.name || 'New Lead'}`;
+  const defaultGroupName = `${approval.students?.name || 'Student Name'} || [University Name] || amber accommodation`;
   const defaultGroupMessage = `Hello! This group has been created to coordinate for the student lead: ${approval.students?.name || 'New Lead'}`;
   
   const [groupName, setGroupName] = useState(defaultGroupName);
