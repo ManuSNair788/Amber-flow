@@ -22,12 +22,15 @@ export async function updateMapping(partnerId: string, whatsappNumber: string, w
   return { success: true }
 }
 
-export async function createPartner(name: string) {
+export async function createPartner(name: string, mappingType: 'individual' | 'group', destination: string) {
   const supabase = await createClient()
+
+  const whatsapp_number = mappingType === 'individual' ? destination : null;
+  const whatsapp_group_id = mappingType === 'group' ? destination : null;
 
   const { error } = await supabase
     .from('partners')
-    .insert([{ name }])
+    .insert([{ name, whatsapp_number, whatsapp_group_id }])
 
   if (error) {
     return { error: error.message }
