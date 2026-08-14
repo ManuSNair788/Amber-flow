@@ -22,6 +22,21 @@ export async function updateMapping(partnerId: string, whatsappNumber: string, w
   return { success: true }
 }
 
+export async function createPartner(name: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('partners')
+    .insert([{ name }])
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/mappings')
+  return { success: true }
+}
+
 export async function fetchWhatsAppGroups() {
   try {
     // Return mock groups directly instead of fetching from an internal API route
