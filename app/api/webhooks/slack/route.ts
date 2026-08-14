@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
         If you can't find a value, use null.
         Important: The partner name is usually indicated by "Partner: [Name]". 
-        For example in "Partner: Manu . DNP/", the partner name is "Manu".
+        For example in "Partner: Manu . DNP/", the partner name is "Manu" and the notes are "DNP". Ignore trailing punctuation on the partner name.
         Message: "${extractionText}"
       `;
 
@@ -280,7 +280,8 @@ export async function POST(req: Request) {
     // 9. Insert Approval Queue with raw slack context
     const teamId = body.team_id;
     const ts = body.event?.ts;
-    let rawContext = text;
+    // Use the full thread history (extractionText) if it was a reply, otherwise just the text
+    let rawContext = (typeof extractionText !== 'undefined' ? extractionText : text) || text;
     if (teamId && channelId && ts) {
       rawContext += `\n\nSLACK_URL:https://slack.com/archives/${channelId}/p${ts.replace('.', '')}`;
     }

@@ -108,6 +108,11 @@ export async function handleSendToWhatsApp(formData: FormData) {
     .single();
 
   if (approval) {
+    if (!approval.message || approval.message.trim() === '') {
+       console.error("Cannot send empty message to WhatsApp");
+       return { success: false, error: "Cannot send an empty message. Please generate a draft first." };
+    }
+
     // Send message via UltraMsg
     const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
     const token = process.env.ULTRAMSG_TOKEN;

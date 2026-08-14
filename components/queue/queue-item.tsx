@@ -302,7 +302,7 @@ export function QueueItem({
             <form action={wrapAction(handleSendToWhatsApp)}>
               <input type="hidden" name="approvalId" value={approval.id} />
               <input type="hidden" name="waGroupId" value={waGroupId} />
-              <button type="submit" disabled={isReplying} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50">
+              <button type="submit" disabled={isReplying || !approval.message} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Phone className="w-4 h-4" /> Send to WA
               </button>
             </form>
