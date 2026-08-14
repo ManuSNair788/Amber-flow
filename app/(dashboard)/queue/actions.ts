@@ -112,7 +112,8 @@ export async function handleSendToWhatsApp(formData: FormData) {
     try {
       const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
       const host = process.env.VERCEL_URL || 'localhost:3000';
-      const BOT_URL = process.env.WHATSAPP_BOT_URL || `${proto}://${host}/api/bot`;
+      // Force internal mock API for demonstration
+      const BOT_URL = `${proto}://${host}/api/bot`;
       
       const response = await fetch(`${BOT_URL}/send-message`, {
         method: 'POST',
@@ -248,7 +249,8 @@ export async function handleDnpQuickAction(formData: FormData) {
     try {
       const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
       const host = process.env.VERCEL_URL || 'localhost:3000';
-      const BOT_URL = process.env.WHATSAPP_BOT_URL || `${proto}://${host}/api/bot`;
+      // Force internal mock API for demonstration
+      const BOT_URL = `${proto}://${host}/api/bot`;
       
       const response = await fetch(`${BOT_URL}/send-message`, {
         method: 'POST',
