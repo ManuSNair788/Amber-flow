@@ -108,27 +108,38 @@ export async function handleSendToWhatsApp(formData: FormData) {
     .single();
 
   if (approval) {
-    // Attempt to send message via the new WhatsApp Bot Microservice
-    try {
-      const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-      const host = process.env.VERCEL_URL || 'localhost:3000';
-      // Force internal mock API for demonstration
-      const BOT_URL = `${proto}://${host}/api/bot`;
-      
-      const response = await fetch(`${BOT_URL}/send-message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          groupId: waGroupId, // This assumes waGroupId is mapped to the internal WA Group ID (e.g. 1234@g.us)
-          message: approval.message
-        })
-      });
+    // Send message via UltraMsg
+    const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+    const token = process.env.ULTRAMSG_TOKEN;
+    
+    if (instanceId && token && waGroupId) {
+      try {
+        let destination = waGroupId;
+        
+        // If the destination is a group link, we must extract the invite code and join the group first 
+        // (or ideally the user should provide the Group ID, but we will handle standard phone numbers perfectly)
+        // Note: For actual group links, UltraMsg might require joining it first. We will try to send.
 
-      if (!response.ok) {
-        console.error('WhatsApp Bot failed to send message:', await response.text());
+        const params = new URLSearchParams({
+          token: token,
+          to: destination,
+          body: approval.message
+        });
+
+        const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+
+        if (!response.ok) {
+          console.error('UltraMsg failed to send message:', await response.text());
+        }
+      } catch (e) {
+        console.error('Failed to connect to UltraMsg:', e);
       }
-    } catch (e) {
-      console.error('Failed to connect to WhatsApp bot:', e);
+    } else {
+      console.error('UltraMsg credentials or destination missing.');
     }
 
     const slackThread = approval.slack_threads as any;
@@ -246,26 +257,32 @@ export async function handleDnpQuickAction(formData: FormData) {
     const studentName = (approval.students as any)?.name || 'the student';
     const dnpMessage = `Hi Team, we attempted to contact ${studentName} but they did not pick up (DNP). We will attempt to follow up again later.`;
 
-    try {
-      const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-      const host = process.env.VERCEL_URL || 'localhost:3000';
-      // Force internal mock API for demonstration
-      const BOT_URL = `${proto}://${host}/api/bot`;
-      
-      const response = await fetch(`${BOT_URL}/send-message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          groupId: waGroupId,
-          message: dnpMessage
-        })
-      });
+    // Send DNP message via UltraMsg
+    const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+    const token = process.env.ULTRAMSG_TOKEN;
+    
+    if (instanceId && token && waGroupId) {
+      try {
+        const params = new URLSearchParams({
+          token: token,
+          to: waGroupId,
+          body: dnpMessage
+        });
 
-      if (!response.ok) {
-        console.error('WhatsApp Bot failed to send DNP message:', await response.text());
+        const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+
+        if (!response.ok) {
+          console.error('UltraMsg failed to send DNP message:', await response.text());
+        }
+      } catch (e) {
+        console.error('Failed to connect to UltraMsg:', e);
       }
-    } catch (e) {
-      console.error('Failed to connect to WhatsApp bot:', e);
+    } else {
+      console.error('UltraMsg credentials or destination missing.');
     }
 
     await supabase.from('activities').insert({
