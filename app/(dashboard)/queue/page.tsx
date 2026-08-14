@@ -31,7 +31,7 @@ export default async function QueuePage() {
       <div className="grid gap-4">
         {approvals?.map((approval: any) => {
           const partner = approval.students?.partners;
-          const waGroupId = partner?.whatsapp_group_id || '';
+          const waGroupId = partner?.whatsapp_group_id || partner?.whatsapp_number || '';
           
           return (
             <QueueItem 

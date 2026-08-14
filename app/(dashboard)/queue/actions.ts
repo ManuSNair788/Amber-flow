@@ -114,7 +114,7 @@ export async function handleSendToWhatsApp(formData: FormData) {
     
     if (instanceId && token && waGroupId) {
       try {
-        let destination = waGroupId;
+        let destination = waGroupId.replace('+', '');
         
         // If the destination is a group link, we must extract the invite code and join the group first 
         // (or ideally the user should provide the Group ID, but we will handle standard phone numbers perfectly)
@@ -265,7 +265,7 @@ export async function handleDnpQuickAction(formData: FormData) {
       try {
         const params = new URLSearchParams({
           token: token,
-          to: waGroupId,
+          to: waGroupId.replace('+', ''),
           body: dnpMessage
         });
 
