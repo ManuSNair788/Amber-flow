@@ -240,15 +240,52 @@ export async function handleReject(formData: FormData) {
 
 export async function handleCreateWaGroup(formData: FormData) {
   const studentId = formData.get('studentId') as string;
-  if (!studentId) return;
+  const studentName = formData.get('studentName') as string || 'New Lead';
+  const groupNumber = formData.get('groupNumber') as string;
+  
+  if (!studentId || !groupNumber) return { success: false, error: 'Missing information' };
+
+  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+  const token = process.env.ULTRAMSG_TOKEN;
+
+  if (instanceId && token) {
+    try {
+      const cleanNumber = groupNumber.replace('+', '').trim();
+      const groupName = `Amber - ${studentName}`;
+      
+      const params = new URLSearchParams({
+        token: token,
+        group_name: groupName,
+        contacts: cleanNumber
+      });
+
+      const response = await fetch(`https://api.ultramsg.com/${instanceId}/groups/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('UltraMsg failed to create group:', data);
+        return { success: false, error: 'Failed to create group via UltraMsg.' };
+      }
+    } catch (e) {
+      console.error('Failed to connect to UltraMsg for group creation:', e);
+      return { success: false, error: 'Network error connecting to UltraMsg.' };
+    }
+  } else {
+    return { success: false, error: 'UltraMsg credentials missing in environment variables.' };
+  }
 
   await supabase.from('activities').insert({
     student_id: studentId,
-    action: 'WhatsApp Group created successfully',
+    action: `WhatsApp Group created with ${groupNumber}`,
     status: 'Group Created'
   });
 
   revalidatePath('/queue');
+  return { success: true };
 }
 
 export async function handleDnpQuickAction(formData: FormData) {

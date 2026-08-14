@@ -39,6 +39,7 @@ export function QueueItem({
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
@@ -102,10 +103,31 @@ export function QueueItem({
   const wrapAction = (actionFn: (formData: FormData) => any) => async (formData: FormData) => {
     setIsReplying(true);
     try {
-      await actionFn(formData);
-      setIsResolved(true);
+      const result = await actionFn(formData);
+      if (result && result.success === false) {
+        alert(result.error || "An error occurred");
+      } else {
+        setIsResolved(true);
+      }
     } catch (e: any) {
       alert("Error: " + e.message);
+      setIsReplying(false);
+    }
+  };
+
+  const onCreateWaGroup = async (formData: FormData) => {
+    setIsReplying(true);
+    try {
+      const result = await handleCreateWaGroup(formData);
+      if (result && result.success === false) {
+        alert(result.error || "Failed to create group.");
+      } else {
+        alert("WhatsApp Group created successfully!");
+        setShowCreateGroup(false);
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
       setIsReplying(false);
     }
   };
@@ -141,12 +163,42 @@ export function QueueItem({
 
         {/* Create WA Group Action */}
         <div className="mt-6 pt-4 border-t border-slate-100">
-          <form action={wrapAction(handleCreateWaGroup)}>
-            <input type="hidden" name="studentId" value={approval.students?.id} />
-            <button type="submit" className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
+          {!showCreateGroup ? (
+            <button 
+              type="button" 
+              onClick={() => setShowCreateGroup(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-sm font-bold rounded-lg transition-colors border border-[#25D366]/20">
               <Phone className="w-4 h-4" /> Create WA Group
             </button>
-          </form>
+          ) : (
+            <form action={onCreateWaGroup} className="flex flex-col gap-2">
+              <input type="hidden" name="studentId" value={approval.students?.id} />
+              <input type="hidden" name="studentName" value={approval.students?.name} />
+              <input 
+                type="text" 
+                name="groupNumber" 
+                placeholder="Enter WhatsApp Number..." 
+                required
+                className="w-full text-sm p-2 rounded border border-[#25D366]/40 focus:outline-none focus:border-[#25D366] focus:ring-1 focus:ring-[#25D366] bg-[#25D366]/5"
+              />
+              <div className="flex gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowCreateGroup(false)}
+                  className="flex-1 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isReplying}
+                  className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold rounded disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 
