@@ -24,19 +24,17 @@ export async function updateMapping(partnerId: string, whatsappNumber: string, w
 
 export async function fetchWhatsAppGroups() {
   try {
-    const proto = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-    const host = process.env.VERCEL_URL || 'localhost:3000';
-    // Force internal mock API for demonstration
-    const BOT_URL = `${proto}://${host}/api/bot`;
+    // Return mock groups directly instead of fetching from an internal API route
+    // to avoid network loopback/DNS issues on Vercel
+    const groups = [
+      { id: '1203631908751234@g.us', name: 'Leap Scholar Support' },
+      { id: '1203631908755678@g.us', name: 'AECC Priority Leads' },
+      { id: '1203631908759012@g.us', name: 'IDP Connect' },
+      { id: '1203631908753456@g.us', name: 'maven Global' },
+      { id: '1203631908759999@g.us', name: 'My Custom WA Group' }
+    ];
     
-    const response = await fetch(`${BOT_URL}/groups`, { cache: 'no-store' })
-    
-    if (!response.ok) {
-      return { groups: [], error: 'Bot is unreachable' }
-    }
-    
-    const data = await response.json()
-    return { groups: data.groups || [], error: null }
+    return { groups, error: null }
   } catch (error) {
     console.error('Failed to fetch WhatsApp groups:', error)
     return { groups: [], error: 'Failed to connect to WhatsApp bot' }
