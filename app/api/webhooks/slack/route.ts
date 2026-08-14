@@ -66,7 +66,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'ignored' });
     }
 
-    const text = body.event.text;
+    let text = body.event.text;
+    if (body.event.subtype === 'message_changed') {
+      text = body.event.message?.text;
+    }
+
     if (!text) {
       console.log("Ignored: Missing text payload");
       return NextResponse.json({ error: "Missing text payload" }, { status: 400 });
@@ -86,7 +90,7 @@ export async function POST(req: Request) {
     //    return NextResponse.json({ status: 'ignored_not_tagged' });
     // }
 
-    const threadTs = body.event?.thread_ts || body.event?.ts;
+    const threadTs = body.event?.thread_ts || (body.event.subtype === 'message_changed' ? body.event.message?.ts : body.event?.ts);
     const channelId = body.event?.channel;
 
     // Check if this thread already exists (Follow-up Check)
@@ -115,13 +119,30 @@ export async function POST(req: Request) {
         .eq('id', slackThreadId);
     } else {
       console.log("New thread, running AI extraction...");
+
+      let extractionText = text;
+      // If this is a reply to an untracked thread (e.g. original was rejected), fetch full history for context
+      if (body.event?.thread_ts && process.env.SLACK_BOT_TOKEN) {
+        console.log("Untracked thread detected. Fetching full history for context...");
+        try {
+          const historyRes = await fetch(`https://slack.com/api/conversations.replies?channel=${channelId}&ts=${threadTs}`, {
+            headers: { 'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}` }
+          });
+          const historyData = await historyRes.json();
+          if (historyData.ok && historyData.messages) {
+            extractionText = historyData.messages.map((m: any) => m.text).join('\n---\n');
+          }
+        } catch(e) {
+          console.error("Failed to fetch thread history:", e);
+        }
+      }
       
       // AI Extraction (using Groq)
       const extractionPrompt = `
         Extract the following information from the message below and output ONLY valid JSON.
         Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
         If you can't find a value, use null.
-        Message: "${text}"
+        Message: "${extractionText}"
       `;
 
       console.log("Sending to Groq AI...");
