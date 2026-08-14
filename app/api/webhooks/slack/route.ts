@@ -142,6 +142,8 @@ export async function POST(req: Request) {
         Extract the following information from the message below and output ONLY valid JSON.
         Required keys: "prospect_id" (extract from the URL if present), "student_name", "partner_name", "status", "notes", "tagged_users".
         If you can't find a value, use null.
+        Important: The partner name is usually indicated by "Partner: [Name]". 
+        For example in "Partner: Manu . DNP/", the partner name is "Manu".
         Message: "${extractionText}"
       `;
 
@@ -248,6 +250,27 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Failed to create thread" }, { status: 500 });
       }
       slackThreadId = newThread.id;
+
+      // If this was an untracked thread (e.g. a user replying to fix a broken partner name),
+      // we should send a confirmation message to Slack so they know it worked.
+      if (body.event?.thread_ts && process.env.SLACK_BOT_TOKEN) {
+         try {
+           await fetch('https://slack.com/api/chat.postMessage', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
+             },
+             body: JSON.stringify({
+               channel: channelId,
+               thread_ts: threadTs,
+               text: `✅ Partner "${extracted.partner_name}" found! The lead has been added to the POAI Approval Queue.`
+             })
+           });
+         } catch(e) {
+           console.error("Failed to send success confirmation to Slack:", e);
+         }
+      }
     }
 
     // 8. Draft Generation (using Groq)
