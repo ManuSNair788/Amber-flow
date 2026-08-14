@@ -163,8 +163,25 @@ export async function POST(req: Request) {
         if (partnerData) {
           partnerId = partnerData.id;
         } else {
-           const { data: newPartner } = await supabase.from('partners').insert({ name: extracted.partner_name }).select('id').single();
-           if (newPartner) partnerId = newPartner.id;
+           console.log("Partner not found. Sending Slack notification and ignoring.");
+           
+           // Notify Slack that the partner does not exist
+           if (process.env.SLACK_BOT_TOKEN && channelId && threadTs) {
+             await fetch('https://slack.com/api/chat.postMessage', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
+               },
+               body: JSON.stringify({
+                 channel: channelId,
+                 thread_ts: threadTs,
+                 text: `⚠️ *POAI Alert:* I couldn't find a partner named "${extracted.partner_name}" in the dashboard. Please make sure they are added in the Mappings page before I can process this lead.`
+               })
+             }).catch(err => console.error('Failed to send slack message:', err));
+           }
+
+           return NextResponse.json({ status: 'ignored_partner_not_found' });
         }
       }
 
