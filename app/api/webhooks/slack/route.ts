@@ -104,6 +104,7 @@ export async function POST(req: Request) {
     let isFollowup = false;
     let followupNumber = 0;
     let slackThreadId;
+    let extractionText = text;
     
     if (existingThread) {
       console.log("Existing thread found, creating follow-up.");
@@ -120,7 +121,6 @@ export async function POST(req: Request) {
     } else {
       console.log("New thread, running AI extraction...");
 
-      let extractionText = text;
       // If this is a reply to an untracked thread (e.g. original was rejected), fetch full history for context
       if (body.event?.thread_ts && process.env.SLACK_BOT_TOKEN) {
         console.log("Untracked thread detected. Fetching full history for context...");
