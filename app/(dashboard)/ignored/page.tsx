@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { ListChecks } from 'lucide-react';
 import { QueueItem } from '@/components/queue/queue-item';
+import { KamFilter } from '@/components/queue/kam-filter';
 import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGroup, handleDnpQuickAction, handleEditMessage, handleGenerateDraft, handleReplyToSlackThread, handleIgnoreFollowup } from '../queue/actions';
 
 export const dynamic = 'force-dynamic';
@@ -70,29 +71,7 @@ export default async function IgnoredPage({ searchParams }: { searchParams: { ka
         </div>
         
         {/* KAM Filter */}
-        <form className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-          <span className="text-sm font-medium text-slate-600">View Queue:</span>
-          <select 
-            name="kam"
-            defaultValue={selectedKam}
-            onChange={(e) => {
-              const url = new URL(window.location.href);
-              if (e.target.value === 'all') {
-                url.searchParams.delete('kam');
-              } else {
-                url.searchParams.set('kam', e.target.value);
-              }
-              window.location.href = url.toString();
-            }}
-            className="text-sm border-none bg-slate-50 rounded px-2 py-1 focus:ring-0 outline-none text-slate-900 font-medium cursor-pointer"
-          >
-            <option value="all">All KAMs</option>
-            <option value="unassigned">Unassigned</option>
-            {teamMembers?.map(member => (
-              <option key={member.id} value={member.id}>{member.name}</option>
-            ))}
-          </select>
-        </form>
+        <KamFilter teamMembers={teamMembers || []} selectedKam={selectedKam} />
       </div>
 
       <div className="grid gap-4">
