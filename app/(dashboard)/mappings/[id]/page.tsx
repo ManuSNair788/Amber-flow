@@ -4,13 +4,14 @@ import { Building2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { CounsellorManager } from './counsellor-manager'
 
-export default async function PartnerDetailsPage({ params }: { params: { id: string } }) {
+export default async function PartnerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
+  const resolvedParams = await params
 
   const { data: partner } = await supabase
     .from('partners')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single()
 
   if (!partner) {
