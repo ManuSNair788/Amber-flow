@@ -6,11 +6,11 @@ import { handleApproveOnly, handleSendToWhatsApp, handleReject, handleCreateWaGr
 export const dynamic = 'force-dynamic';
 
 export default async function QueuePage() {
-  const { data: approvals } = await supabase
+  const { data: rawApprovals, error: approvalsError } = await supabase
     .from('approvals')
     .select(`
       *, 
-      students(*, partners(*, counsellors(*))),
+      students(*, partners(*)),
       slack_threads (
         id, slack_channel_id, slack_thread_ts,
         approvals (
@@ -20,6 +20,32 @@ export default async function QueuePage() {
     `)
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
+
+  if (approvalsError) {
+    console.error("Error fetching approvals:", approvalsError);
+  }
+
+  // Fetch counsellors separately to bypass PostgREST schema cache issues with the newly created table
+  const partnerIds = [...new Set(rawApprovals?.map(a => a.students?.partners?.id).filter(Boolean))];
+  let allCounsellors: any[] = [];
+  
+  if (partnerIds.length > 0) {
+    const { data: counsellorsData } = await supabase
+      .from('counsellors')
+      .select('*')
+      .in('partner_id', partnerIds);
+      
+    allCounsellors = counsellorsData || [];
+  }
+
+  // Attach counsellors to partners manually
+  const approvals = rawApprovals?.map(approval => {
+    const partner = approval.students?.partners;
+    if (partner) {
+      partner.counsellors = allCounsellors.filter(c => c.partner_id === partner.id);
+    }
+    return approval;
+  });
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
