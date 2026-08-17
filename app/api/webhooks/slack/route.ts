@@ -181,10 +181,10 @@ export async function POST(req: Request) {
           .from('partners')
           .select('id')
           .ilike('name', `%${extracted.partner_name}%`)
-          .single();
+          .limit(1);
         
-        if (partnerData) {
-          partnerId = partnerData.id;
+        if (partnerData && partnerData.length > 0) {
+          partnerId = partnerData[0].id;
         } else {
            console.log("Partner not found. Sending Slack notification and ignoring.");
            
