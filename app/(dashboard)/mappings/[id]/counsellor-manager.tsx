@@ -150,7 +150,7 @@ function UploadContacts({ partnerId, onSuccess }: { partnerId: string, onSuccess
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const parsedData = []
+        const parsedData: { name: string, contactNumber: string, branch: string }[] = []
         for (const row of results.data as any[]) {
           // Normalize keys (handle Name/name, Contact/contact, Branch/branch)
           const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name'))
