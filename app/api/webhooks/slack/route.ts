@@ -144,6 +144,7 @@ export async function POST(req: Request) {
         If you can't find a value, use null.
         Important: The partner name is usually indicated by "Partner: [Name]". 
         For example in "Partner: Manu . DNP/", the partner name is "Manu" and the notes are "DNP". Ignore trailing punctuation on the partner name.
+        Crucial: "tagged_users" must contain the raw Slack ID tag (e.g. "<@U12345678>") if present in the message. Do not remove the brackets or @ symbol.
         Message: "${extractionText}"
       `;
 
@@ -211,6 +212,29 @@ export async function POST(req: Request) {
       const prospect_id = extracted.prospect_id || Math.floor(100000 + Math.random() * 900000).toString();
 
       console.log("New thread, creating student and thread record.");
+      
+      // Look up KAM from tagged_users
+      let kamId = null;
+      if (extracted.tagged_users) {
+        // Handle cases where the model might return a string array or comma separated string
+        const tagRaw = Array.isArray(extracted.tagged_users) ? extracted.tagged_users[0] : extracted.tagged_users;
+        const cleanTag = tagRaw?.replace('<@', '').replace('>', '').trim();
+        
+        if (cleanTag) {
+          console.log("Looking up KAM with Slack ID:", cleanTag);
+          const { data: kamData } = await supabase
+            .from('team_members')
+            .select('id')
+            .eq('slack_id', cleanTag)
+            .single();
+            
+          if (kamData) {
+            kamId = kamData.id;
+            console.log("Assigned KAM ID:", kamId);
+          }
+        }
+      }
+
       const { data: student, error: studentError } = await supabase
         .from('students')
         .upsert(
@@ -218,6 +242,7 @@ export async function POST(req: Request) {
             prospect_id,
             name: extracted.student_name || 'Unknown Lead',
             partner_id: partnerId,
+            kam_id: kamId,
             status: extracted.status || 'New',
             notes: extracted.notes
           },

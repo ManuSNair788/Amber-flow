@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink, Send, ThumbsUp } from 'lucide-react';
+import { X, Edit3, MessageSquareWarning, Slack, Phone, Check, Save, Sparkles, RefreshCw, ExternalLink, Send, ThumbsUp, Users } from 'lucide-react';
 
 function ClockIcon() {
   return (
@@ -162,6 +162,13 @@ export function QueueItem({
           <p><span className="font-medium text-slate-900">Partner:</span> {partner?.name || 'Unknown'}</p>
           <p><span className="font-medium text-slate-900">Status:</span> {approval.students?.status}</p>
           
+          <div className="pt-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold border border-indigo-100">
+              <Users className="w-3 h-3" /> 
+              KAM: {approval.students?.team_members?.name || 'Unassigned'}
+            </span>
+          </div>
+
           {/* Follow up Metric requested by user */}
           {approval.is_followup && (
             <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs font-semibold mt-2 border border-amber-200">
