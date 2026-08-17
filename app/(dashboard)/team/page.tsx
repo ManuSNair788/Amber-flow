@@ -23,7 +23,7 @@ export default async function TeamPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 bg-slate-50/50">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Add Team Member</h2>
-          <form action={addTeamMember} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <form action={async (formData) => { 'use server'; await addTeamMember(formData); }} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
               <input 
