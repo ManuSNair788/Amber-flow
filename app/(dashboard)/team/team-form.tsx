@@ -37,13 +37,23 @@ export function TeamForm() {
           {error}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
           <input 
             name="name" 
             required 
             placeholder="Manu S Nair"
+            className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+          <input 
+            name="email" 
+            type="email"
+            required 
+            placeholder="name@amberstudent.com"
             className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
           />
         </div>
