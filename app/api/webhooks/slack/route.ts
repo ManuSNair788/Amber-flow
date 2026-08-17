@@ -153,7 +153,7 @@ export async function POST(req: Request) {
           { role: "system", content: "You are a JSON-only data extraction bot." },
           { role: "user", content: extractionPrompt }
         ],
-        model: "llama-3.1-8b-instant",
+        model: "llama3-8b-8192",
         response_format: { type: "json_object" }
       });
 
