@@ -10,7 +10,7 @@ export default async function QueuePage() {
     .from('approvals')
     .select(`
       *, 
-      students(*, partners(*)),
+      students(*, partners(*, counsellors(*))),
       slack_threads (
         id, slack_channel_id, slack_thread_ts,
         approvals (

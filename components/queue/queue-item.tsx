@@ -57,6 +57,8 @@ export function QueueItem({
     ? [...approval.slack_threads.approvals].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     : [];
 
+  const [selectedWaDestination, setSelectedWaDestination] = useState(waGroupId);
+
   const onReply = async (formData: FormData) => {
     if (!handleReplyToSlackThread) return;
     setIsReplying(true);
@@ -310,10 +312,27 @@ export function QueueItem({
             </div>
           </div>
         ) : (
-          <>
+          <div className="flex flex-col gap-2">
+            {partner?.whatsapp_group_id && partner?.counsellors && partner.counsellors.length > 0 && (
+              <div className="flex flex-col gap-1 w-full bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Destination</label>
+                <select 
+                  className="w-full bg-white text-sm border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-[#25D366] text-slate-700"
+                  value={selectedWaDestination}
+                  onChange={(e) => setSelectedWaDestination(e.target.value)}
+                >
+                  <option value={waGroupId}>WhatsApp Group ({partner.name})</option>
+                  {partner.counsellors.map((c: any) => (
+                    <option key={c.id} value={c.contact_number}>
+                      Counsellor: {c.name} ({c.contact_number})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <form action={wrapAction(handleSendToWhatsApp)}>
               <input type="hidden" name="approvalId" value={approval.id} />
-              <input type="hidden" name="waGroupId" value={waGroupId} />
+              <input type="hidden" name="waGroupId" value={selectedWaDestination} />
               <input type="hidden" name="messageOverride" value={message || ''} />
               <button type="submit" disabled={isReplying || !message || message.trim() === ''} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 <Phone className="w-4 h-4" /> Send to WA
@@ -379,7 +398,7 @@ export function QueueItem({
               </form>
             )}
 
-          </>
+          </div>
         )}
       </div>
 
