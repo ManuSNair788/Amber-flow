@@ -13,6 +13,10 @@ export async function addTeamMember(formData: FormData) {
     return { success: false, error: 'Name and Role are required' };
   }
 
+  if (role === 'KAM' && !slack_id) {
+    return { success: false, error: 'Slack ID is required for KAMs.' };
+  }
+
   // Basic validation to strip <@ > if user pasted raw slack tag
   let cleanSlackId = slack_id;
   if (cleanSlackId) {

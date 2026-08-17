@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
-import { addTeamMember, deleteTeamMember } from './actions';
-import { Users, Trash2, Plus, ShieldAlert } from 'lucide-react';
+import { deleteTeamMember } from './actions';
+import { Users, Trash2, ShieldAlert } from 'lucide-react';
+import { TeamForm } from './team-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,42 +24,7 @@ export default async function TeamPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-200 bg-slate-50/50">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Add Team Member</h2>
-          <form action={async (formData) => { 'use server'; await addTeamMember(formData); }} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-              <input 
-                name="name" 
-                required 
-                placeholder="Manu S Nair"
-                className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Slack ID (Optional)</label>
-              <input 
-                name="slack_id" 
-                placeholder="U083G34P8P3"
-                className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-              <select 
-                name="role" 
-                className="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-              >
-                <option value="KAM">KAM</option>
-                <option value="Admin">Admin</option>
-              </select>
-            </div>
-            <button 
-              type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-2 text-sm font-medium transition-colors flex items-center justify-center gap-2 h-[38px]"
-            >
-              <Plus className="w-4 h-4" />
-              Add Member
-            </button>
-          </form>
+          <TeamForm />
         </div>
 
         <div className="overflow-x-auto">
