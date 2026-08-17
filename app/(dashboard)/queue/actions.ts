@@ -31,7 +31,7 @@ export async function handleGenerateDraft(formData: FormData) {
         { role: "system", content: "You are a helpful partnership operations assistant drafting WhatsApp messages." },
         { role: "user", content: draftPrompt }
       ],
-      model: "llama3-8b-8192",
+      model: "groq/compound-mini",
     });
     
     const draftedMessage = draftCompletion.choices[0]?.message?.content || '';
