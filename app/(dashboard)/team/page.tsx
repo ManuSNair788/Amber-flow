@@ -17,7 +17,12 @@ export default async function TeamPage() {
   const { data: { session } } = await authSupabase.auth.getSession();
   
   let isAdmin = false;
-  if (session?.user?.email) {
+  
+  if (!teamMembers || teamMembers.length === 0) {
+    // Bootstrap mode: If there are no team members in the DB at all,
+    // allow the first user who accesses this page to add a team member (bootstrap).
+    isAdmin = true;
+  } else if (session?.user?.email) {
     const { data: member } = await supabase
       .from('team_members')
       .select('role')
