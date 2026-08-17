@@ -302,6 +302,13 @@ export async function POST(req: Request) {
     // Skipped per user request - drafts are now generated on-demand via the Queue UI
     const draftedMessage = '';
 
+    // Detect multiple links
+    const urlRegex = /https?:\/\/[^\s>\|]+/g;
+    const links = text.match(urlRegex) || [];
+    // Slack adds links like <http://...|Text>
+    const uniqueLinks = Array.from(new Set(links));
+    const isMultiLink = uniqueLinks.length > 1;
+
     // 9. Insert Approval Queue with raw slack context
     const teamId = body.team_id;
     const ts = body.event?.ts;
@@ -311,12 +318,14 @@ export async function POST(req: Request) {
       rawContext += `\n\nSLACK_URL:https://slack.com/archives/${channelId}/p${ts.replace('.', '')}`;
     }
 
+    const approvalStatus = isMultiLink ? 'ignored' : 'pending';
+
     const { error: approvalError } = await supabase.from('approvals').insert({
       student_id: studentId,
       slack_thread_id: slackThreadId,
       raw_slack_context: rawContext,
       message: draftedMessage,
-      status: 'pending',
+      status: approvalStatus,
       is_followup: isFollowup,
       followup_number: isFollowup ? followupNumber : null
     });
