@@ -74,6 +74,7 @@ const requireAuth = (req: express.Request, res: express.Response, next: express.
 // POST /messages/chat
 // Body: { token, to, body }
 app.post('/messages/chat', requireAuth, async (req, res) => {
+  console.log('Incoming request from Vercel:', req.body);
   try {
     let { to, body } = req.body;
     
