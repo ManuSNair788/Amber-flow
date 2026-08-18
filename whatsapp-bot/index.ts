@@ -59,12 +59,17 @@ async function connectToWhatsApp() {
       const msg = m.messages[0];
       if (!msg.message) return;
 
-      const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+      // Extract text safely from various message types
+      let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+      if (!text && msg.message?.ephemeralMessage?.message) {
+        text = msg.message.ephemeralMessage.message.conversation || msg.message.ephemeralMessage.message.extendedTextMessage?.text || '';
+      }
       const textLower = text.toLowerCase().trim();
       
       // DEBUG LOGGING: So we can see what the bot is hearing!
+      console.log(`[DEBUG EVENT] Type: ${m.type} | fromMe: ${msg.key.fromMe} | JID: ${msg.key.remoteJid}`);
       if (textLower) {
-        console.log(`[DEBUG] Bot heard a message: "${textLower}"`);
+        console.log(`[DEBUG] Bot heard text: "${textLower}"`);
       }
 
       if (textLower.startsWith('!id') || textLower.startsWith('!getid')) {
