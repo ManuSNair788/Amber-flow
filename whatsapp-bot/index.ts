@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
-const AUTH_DIR = './auth_info_baileys';
+const AUTH_DIR = process.env.AUTH_DIR || './auth_info_baileys';
 
 let sock: ReturnType<typeof makeWASocket> | null = null;
 let isReady = false;
