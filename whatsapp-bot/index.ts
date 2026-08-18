@@ -84,6 +84,8 @@ app.post('/messages/chat', requireAuth, async (req, res) => {
     // Baileys requires @s.whatsapp.net for individuals and @g.us for groups
     if (to.includes('@c.us')) {
       to = to.replace('@c.us', '@s.whatsapp.net');
+    } else if (!to.includes('@')) {
+      to = `${to}@s.whatsapp.net`;
     }
 
     const sentMsg = await sock!.sendMessage(to, { text: body });
