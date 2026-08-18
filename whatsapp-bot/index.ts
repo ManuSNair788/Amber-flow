@@ -55,12 +55,20 @@ async function connectToWhatsApp() {
 
   // Listen for incoming messages to provide the Group ID privately
   sock.ev.on('messages.upsert', async (m) => {
-    const msg = m.messages[0];
-    if (m.type === 'notify') {
+    try {
+      const msg = m.messages[0];
+      if (!msg.message) return;
+
       const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
       const textLower = text.toLowerCase().trim();
       
+      // DEBUG LOGGING: So we can see what the bot is hearing!
+      if (textLower) {
+        console.log(`[DEBUG] Bot heard a message: "${textLower}"`);
+      }
+
       if (textLower.startsWith('!id') || textLower.startsWith('!getid')) {
+        console.log(`[DEBUG] !id command triggered by: ${msg.key.remoteJid}`);
         let senderJid = msg.key.fromMe ? sock!.user?.id : (msg.key.participant || msg.key.remoteJid);
         if (senderJid && senderJid.includes(':')) {
           senderJid = senderJid.split(':')[0] + '@s.whatsapp.net';
@@ -71,6 +79,7 @@ async function connectToWhatsApp() {
         const args = textLower.split(' ');
         if (args.length > 1) {
           const searchName = textLower.substring(textLower.indexOf(' ') + 1).trim();
+          console.log(`[DEBUG] Searching for groups matching: ${searchName}`);
           const groups = await sock!.groupFetchAllParticipating();
           const matchedGroups = Object.values(groups).filter(g => g.subject.toLowerCase().includes(searchName));
           
@@ -84,7 +93,7 @@ async function connectToWhatsApp() {
             });
           }
           await sock!.sendMessage(senderJid, { text: replyText });
-          
+          console.log(`[DEBUG] Sent search results to ${senderJid}`);
         } else {
           // No arguments provided, just get the ID of the current chat
           const chatId = msg.key.remoteJid;
@@ -92,9 +101,12 @@ async function connectToWhatsApp() {
             await sock!.sendMessage(senderJid, { 
               text: `🤖 *Private Admin Message*\nThe ID for the group/chat "${chatId}" is:\n\n*${chatId}*` 
             });
+            console.log(`[DEBUG] Sent chat ID to ${senderJid}`);
           }
         }
       }
+    } catch (err) {
+      console.error('[DEBUG] Error inside messages.upsert:', err);
     }
   });
 }
