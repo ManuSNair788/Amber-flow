@@ -52,6 +52,51 @@ async function connectToWhatsApp() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+
+  // Listen for incoming messages to provide the Group ID privately
+  sock.ev.on('messages.upsert', async (m) => {
+    const msg = m.messages[0];
+    if (m.type === 'notify') {
+      const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+      const textLower = text.toLowerCase().trim();
+      
+      if (textLower.startsWith('!id') || textLower.startsWith('!getid')) {
+        let senderJid = msg.key.fromMe ? sock!.user?.id : (msg.key.participant || msg.key.remoteJid);
+        if (senderJid && senderJid.includes(':')) {
+          senderJid = senderJid.split(':')[0] + '@s.whatsapp.net';
+        }
+        if (!senderJid) return;
+
+        // Check if they provided a group name to search for (e.g. "!id Leap Scholar")
+        const args = textLower.split(' ');
+        if (args.length > 1) {
+          const searchName = textLower.substring(textLower.indexOf(' ') + 1).trim();
+          const groups = await sock!.groupFetchAllParticipating();
+          const matchedGroups = Object.values(groups).filter(g => g.subject.toLowerCase().includes(searchName));
+          
+          let replyText = '';
+          if (matchedGroups.length === 0) {
+            replyText = `🤖 Could not find any group matching "${searchName}".`;
+          } else {
+            replyText = `🤖 *Group IDs matching "${searchName}":*\n\n`;
+            matchedGroups.forEach(g => {
+              replyText += `- *${g.subject}*: ${g.id}\n`;
+            });
+          }
+          await sock!.sendMessage(senderJid, { text: replyText });
+          
+        } else {
+          // No arguments provided, just get the ID of the current chat
+          const chatId = msg.key.remoteJid;
+          if (chatId) {
+            await sock!.sendMessage(senderJid, { 
+              text: `🤖 *Private Admin Message*\nThe ID for the group/chat "${chatId}" is:\n\n*${chatId}*` 
+            });
+          }
+        }
+      }
+    }
+  });
 }
 
 // ----------------------------------------------------
@@ -117,6 +162,7 @@ app.post('/groups/create', requireAuth, async (req, res) => {
     });
 
     const group = await sock!.groupCreate(group_name, contactArray);
+    console.log(`🎉 New Group Created! Name: ${group_name} | ID: ${group.id}`);
     
     // Ultramsg returns the group ID which can be used to send messages later
     return res.json({ sent: 'true', message: 'ok', id: group.id });
@@ -125,6 +171,24 @@ app.post('/groups/create', requireAuth, async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 });
+
+// 3. Get All Groups
+// GET /groups
+// Query: ?token=poai_local_token_123
+app.get('/groups', requireAuth, async (req, res) => {
+  try {
+    const groups = await sock!.groupFetchAllParticipating();
+    const groupList = Object.values(groups).map(g => ({
+      id: g.id,
+      name: g.subject
+    }));
+    return res.json(groupList);
+  } catch (error: any) {
+    console.error('Error fetching groups:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`WhatsApp API Gateway starting on port ${PORT}...`);

@@ -157,7 +157,7 @@ export function MappingForm({
         ) : (
           <input
             type="text"
-            placeholder="Group Invite Link..."
+            placeholder="Group Invite Link or ID (e.g., 1234@g.us)..."
             value={whatsappGroup}
             onChange={(e) => setWhatsappGroup(e.target.value)}
             className="w-full px-2 py-1.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
