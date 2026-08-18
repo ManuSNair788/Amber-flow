@@ -140,7 +140,8 @@ export async function handleSendToWhatsApp(formData: FormData) {
           body: finalMessage
         });
 
-        const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+        const cleanInstanceId = instanceId.replace(/\/+$/, '');
+        const baseUrl = cleanInstanceId.startsWith('http') ? cleanInstanceId : `https://api.ultramsg.com/${cleanInstanceId}`;
         const response = await fetch(`${baseUrl}/messages/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -267,7 +268,8 @@ export async function handleCreateWaGroup(formData: FormData) {
         contacts: cleanContacts
       });
 
-      const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+      const cleanInstanceId = instanceId.replace(/\/+$/, '');
+      const baseUrl = cleanInstanceId.startsWith('http') ? cleanInstanceId : `https://api.ultramsg.com/${cleanInstanceId}`;
       const createResponse = await fetch(`${baseUrl}/groups/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -355,7 +357,8 @@ export async function handleDnpQuickAction(formData: FormData) {
           body: dnpMessage
         });
 
-        const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+        const cleanInstanceId = instanceId.replace(/\/+$/, '');
+        const baseUrl = cleanInstanceId.startsWith('http') ? cleanInstanceId : `https://api.ultramsg.com/${cleanInstanceId}`;
         const response = await fetch(`${baseUrl}/messages/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
