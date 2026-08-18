@@ -140,7 +140,8 @@ export async function handleSendToWhatsApp(formData: FormData) {
           body: finalMessage
         });
 
-        const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+        const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+        const response = await fetch(`${baseUrl}/messages/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString()
@@ -266,7 +267,8 @@ export async function handleCreateWaGroup(formData: FormData) {
         contacts: cleanContacts
       });
 
-      const createResponse = await fetch(`https://api.ultramsg.com/${instanceId}/groups/create`, {
+      const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+      const createResponse = await fetch(`${baseUrl}/groups/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: createParams.toString()
@@ -287,7 +289,7 @@ export async function handleCreateWaGroup(formData: FormData) {
            body: groupMessage
          });
 
-         const msgResponse = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+         const msgResponse = await fetch(`${baseUrl}/messages/chat`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
            body: msgParams.toString()
@@ -353,7 +355,8 @@ export async function handleDnpQuickAction(formData: FormData) {
           body: dnpMessage
         });
 
-        const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+        const baseUrl = instanceId.startsWith('http') ? instanceId : `https://api.ultramsg.com/${instanceId}`;
+        const response = await fetch(`${baseUrl}/messages/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString()
