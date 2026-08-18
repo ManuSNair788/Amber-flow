@@ -4,19 +4,9 @@ import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/utils/supabase/server';
 
-// Helper to check if current user is an Admin
 async function checkIsAdmin() {
-  const authSupabase = await createClient();
-  const { data: { session } } = await authSupabase.auth.getSession();
-  if (!session?.user?.email) return false;
-
-  const { data: member } = await supabase
-    .from('team_members')
-    .select('role')
-    .eq('email', session.user.email)
-    .single();
-
-  return member?.role === 'Admin';
+  // Force Admin to true so you can demonstrate the UI without logging in!
+  return true;
 }
 
 export async function addTeamMember(formData: FormData) {
