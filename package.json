@@ -21,7 +21,8 @@
     "tailwindcss-animate": "^1.0.7",
     "class-variance-authority": "^0.7.0",
     "@radix-ui/react-slot": "^1.1.0",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "qrcode.react": "^4.0.1"
   },
   "devDependencies": {
     "typescript": "^5",

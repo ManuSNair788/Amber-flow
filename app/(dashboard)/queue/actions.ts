@@ -1,6 +1,7 @@
 'use server'
 
 import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { groq } from '@/lib/groq';
 
@@ -134,10 +135,18 @@ export async function handleSendToWhatsApp(formData: FormData) {
           }
         }
 
+        const authSupabase = await createClient();
+        const { data: { user } } = await authSupabase.auth.getUser();
+        
+        // FEATURE FLAG: Change to false to force all messages through the single-tenant "default" connection
+        const ENABLE_MULTI_TENANT = false; 
+        const kamId = ENABLE_MULTI_TENANT ? (user?.id || 'default') : 'default';
+
         const params = new URLSearchParams({
           token: token,
           to: destination,
-          body: finalMessage
+          body: finalMessage,
+          kamId: kamId
         });
 
         const cleanInstanceId = instanceId.replace(/\/+$/, '');
@@ -262,10 +271,18 @@ export async function handleCreateWaGroup(formData: FormData) {
       const numberArray = groupNumbers.split(',').map(n => n.replace('+', '').trim()).filter(n => n);
       const cleanContacts = numberArray.join(',');
       
+      const authSupabase = await createClient();
+      const { data: { user } } = await authSupabase.auth.getUser();
+      
+      // FEATURE FLAG: Change to false to force all messages through the single-tenant "default" connection
+      const ENABLE_MULTI_TENANT = false; 
+      const kamId = ENABLE_MULTI_TENANT ? (user?.id || 'default') : 'default';
+
       const createParams = new URLSearchParams({
         token: token,
         group_name: groupName,
-        contacts: cleanContacts
+        contacts: cleanContacts,
+        kamId: kamId
       });
 
       const cleanInstanceId = instanceId.replace(/\/+$/, '');
@@ -288,7 +305,8 @@ export async function handleCreateWaGroup(formData: FormData) {
          const msgParams = new URLSearchParams({
            token: token,
            to: createdGroupId,
-           body: groupMessage
+           body: groupMessage,
+           kamId: kamId
          });
 
          const msgResponse = await fetch(`${baseUrl}/messages/chat`, {
